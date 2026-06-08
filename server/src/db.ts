@@ -55,6 +55,7 @@ export function initDb(): void {
       user_id INTEGER NOT NULL,
       name TEXT NOT NULL,
       color TEXT,
+      emoji TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
@@ -110,7 +111,21 @@ export function initDb(): void {
     CREATE INDEX IF NOT EXISTS idx_list_shares_user ON list_shares(user_id);
   `);
 
+  runMigrations();
   seedAdmin();
+}
+
+function columnExists(table: string, column: string): boolean {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  return cols.some((c) => c.name === column);
+}
+
+// Lightweight, idempotent schema migrations for pre-existing databases that
+// were created before a column was introduced.
+function runMigrations(): void {
+  if (!columnExists('lists', 'emoji')) {
+    db.exec('ALTER TABLE lists ADD COLUMN emoji TEXT');
+  }
 }
 
 function seedAdmin(): void {

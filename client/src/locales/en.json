@@ -2,6 +2,8 @@
   "common": {
     "add": "Add",
     "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
     "done": "Done",
     "remove": "Remove",
     "delete": "Delete",
@@ -66,6 +68,7 @@
     "sharePerson": "Share…",
     "sharedWith_one": "Shared with {{count}} person",
     "sharedWith_other": "Shared with {{count}} people",
+    "editList": "Edit list",
     "deleteList": "🗑️ Delete list",
     "ownedBy": "Owned by {{email}}",
     "leaveList": "🚪 Leave list",
@@ -80,6 +83,13 @@
     "confirmDeleteTask": "Delete task \"{{title}}\"?",
     "confirmDeleteList": "Delete list \"{{name}}\"? Tasks will be kept without a list.",
     "confirmLeaveList": "Leave shared list \"{{name}}\"? You'll lose access until re-invited."
+  },
+  "listModal": {
+    "title": "Edit list",
+    "name": "Name",
+    "emoji": "Emoji",
+    "clearEmoji": "Clear",
+    "customEmoji": "Custom…"
   },
   "taskCard": {
     "daily": "Daily",

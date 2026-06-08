@@ -6,6 +6,7 @@ import { List, Task, TaskInput } from '../types';
 import TaskCard from '../components/TaskCard';
 import TaskModal from '../components/TaskModal';
 import ShareModal from '../components/ShareModal';
+import ListModal from '../components/ListModal';
 import { useAuth } from '../context/AuthContext';
 
 // Icon used in the sidebar to distinguish list ownership/sharing.
@@ -44,6 +45,7 @@ export default function DashboardPage() {
   const [quickBusy, setQuickBusy] = useState(false);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [shareList, setShareList] = useState<List | null>(null);
+  const [editingList, setEditingList] = useState<List | null>(null);
   const [showSidebar, setShowSidebar] = useState(false);
 
   const activeListId = view.kind === 'list' ? view.id : null;
@@ -112,6 +114,11 @@ export default function DashboardPage() {
     setNewListName('');
   };
 
+  const saveList = async (id: number, body: { name: string; emoji: string | null }) => {
+    const updated = await api.updateList(id, body);
+    setLists((prev) => prev.map((l) => (l.id === id ? updated : l)));
+  };
+
   const deleteList = async (list: List) => {
     if (!confirm(t('dashboard.confirmDeleteList', { name: list.name }))) return;
     await api.deleteList(list.id);
@@ -167,7 +174,9 @@ export default function DashboardPage() {
       ? t('dashboard.headingToday', { date: todayStr() })
       : view.kind === 'all'
         ? t('dashboard.headingAll')
-        : lists.find((l) => l.id === view.id)?.name || t('dashboard.headingList');
+        : currentList
+          ? `${currentList.emoji ? currentList.emoji + ' ' : ''}${currentList.name}`
+          : t('dashboard.headingList');
 
   const openNew = (title = '') => {
     setEditing(null);
@@ -225,7 +234,7 @@ export default function DashboardPage() {
               className="d-flex justify-content-between align-items-center gap-2"
             >
               <span className="text-truncate">
-                {listIcon(l)} {l.name}
+                {l.emoji || listIcon(l)} {l.name}
               </span>
               {l.role !== 'owner' && !l.can_edit && (
                 <Badge bg="secondary" className="tag-chip">
@@ -349,6 +358,9 @@ export default function DashboardPage() {
                 <Dropdown.Menu>
                   {currentList.role === 'owner' ? (
                     <>
+                      <Dropdown.Item onClick={() => setEditingList(currentList)}>
+                        ✏️ {t('dashboard.editList')}
+                      </Dropdown.Item>
                       <Dropdown.Item onClick={() => setShareList(currentList)}>
                         👥 {t('dashboard.sharePerson')}
                       </Dropdown.Item>
@@ -468,6 +480,13 @@ export default function DashboardPage() {
         list={shareList}
         onClose={() => setShareList(null)}
         onChanged={loadMeta}
+      />
+
+      <ListModal
+        show={!!editingList}
+        list={editingList}
+        onClose={() => setEditingList(null)}
+        onSave={saveList}
       />
     </Container>
   );

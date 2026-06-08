@@ -20,6 +20,7 @@ export interface ListRow {
   user_id: number;
   name: string;
   color: string | null;
+  emoji: string | null;
   created_at: string;
 }
 
@@ -37,6 +38,7 @@ export interface ListDTO {
   user_id: number; // owner id (kept for backwards compatibility with the client)
   name: string;
   color: string | null;
+  emoji: string | null;
   created_at: string;
   owner_id: number;
   owner_email: string;

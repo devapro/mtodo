@@ -18,6 +18,7 @@ export interface List {
   user_id: number;
   name: string;
   color: string | null;
+  emoji: string | null;
   created_at: string;
   owner_id: number;
   owner_email: string;

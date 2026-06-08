@@ -2,6 +2,8 @@
   "common": {
     "add": "Додати",
     "cancel": "Скасувати",
+    "save": "Зберегти",
+    "saving": "Збереження…",
     "done": "Готово",
     "remove": "Вилучити",
     "delete": "Видалити",
@@ -68,6 +70,7 @@
     "sharedWith_few": "Доступ відкрито {{count}} користувачам",
     "sharedWith_many": "Доступ відкрито {{count}} користувачам",
     "sharedWith_other": "Доступ відкрито {{count}} користувачам",
+    "editList": "Редагувати список",
     "deleteList": "🗑️ Видалити список",
     "ownedBy": "Власник: {{email}}",
     "leaveList": "🚪 Покинути список",
@@ -82,6 +85,13 @@
     "confirmDeleteTask": "Видалити завдання «{{title}}»?",
     "confirmDeleteList": "Видалити список «{{name}}»? Завдання залишаться без списку.",
     "confirmLeaveList": "Покинути спільний список «{{name}}»? Ви втратите доступ до повторного запрошення."
+  },
+  "listModal": {
+    "title": "Редагувати список",
+    "name": "Назва",
+    "emoji": "Емодзі",
+    "clearEmoji": "Очистити",
+    "customEmoji": "Свій…"
   },
   "taskCard": {
     "daily": "Щодня",

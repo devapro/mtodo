@@ -2,6 +2,8 @@
   "common": {
     "add": "Додај",
     "cancel": "Откажи",
+    "save": "Сачувај",
+    "saving": "Чување…",
     "done": "Готово",
     "remove": "Уклони",
     "delete": "Обриши",
@@ -67,6 +69,7 @@
     "sharedWith_one": "Дељено са {{count}} особом",
     "sharedWith_few": "Дељено са {{count}} особе",
     "sharedWith_other": "Дељено са {{count}} особа",
+    "editList": "Измени листу",
     "deleteList": "🗑️ Обриши листу",
     "ownedBy": "Власник: {{email}}",
     "leaveList": "🚪 Напусти листу",
@@ -81,6 +84,13 @@
     "confirmDeleteTask": "Обрисати задатак „{{title}}“?",
     "confirmDeleteList": "Обрисати листу „{{name}}“? Задаци ће бити сачувани без листе.",
     "confirmLeaveList": "Напустити дељену листу „{{name}}“? Изгубићете приступ док поново не будете позвани."
+  },
+  "listModal": {
+    "title": "Измени листу",
+    "name": "Назив",
+    "emoji": "Емоџи",
+    "clearEmoji": "Очисти",
+    "customEmoji": "Прилагођено…"
   },
   "taskCard": {
     "daily": "Дневно",

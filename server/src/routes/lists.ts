@@ -8,6 +8,14 @@ import { ListRow, ListDTO, ListShareDTO, UserRow } from '../types';
 const router = Router();
 router.use(authRequired);
 
+// Keep emoji values small and tidy. Empty string clears the emoji.
+function normalizeEmoji(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  const s = String(value).trim();
+  if (!s) return null;
+  return [...s].slice(0, 16).join('');
+}
+
 function toDTO(list: ListRow, viewerId: number): ListDTO {
   const owner = db
     .prepare('SELECT email FROM users WHERE id = ?')
@@ -33,6 +41,7 @@ function toDTO(list: ListRow, viewerId: number): ListDTO {
     user_id: list.user_id,
     name: list.name,
     color: list.color,
+    emoji: list.emoji,
     created_at: list.created_at,
     owner_id: list.user_id,
     owner_email: owner?.email || '',
@@ -65,11 +74,12 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
   const name = String(req.body?.name || '').trim();
   const color = req.body?.color ? String(req.body.color) : null;
+  const emoji = normalizeEmoji(req.body?.emoji);
   if (!name) return res.status(400).json({ error: 'List name is required' });
 
   const info = db
-    .prepare('INSERT INTO lists (user_id, name, color) VALUES (?, ?, ?)')
-    .run(req.user!.id, name, color);
+    .prepare('INSERT INTO lists (user_id, name, color, emoji) VALUES (?, ?, ?, ?)')
+    .run(req.user!.id, name, color, emoji);
   const list = db
     .prepare('SELECT * FROM lists WHERE id = ?')
     .get(Number(info.lastInsertRowid)) as ListRow;
@@ -86,7 +96,14 @@ router.put('/:id', (req, res) => {
 
   const name = req.body?.name !== undefined ? String(req.body.name).trim() : existing.name;
   const color = req.body?.color !== undefined ? req.body.color : existing.color;
-  db.prepare('UPDATE lists SET name = ?, color = ? WHERE id = ?').run(name, color, id);
+  const emoji =
+    req.body?.emoji !== undefined ? normalizeEmoji(req.body.emoji) : existing.emoji;
+  db.prepare('UPDATE lists SET name = ?, color = ?, emoji = ? WHERE id = ?').run(
+    name,
+    color,
+    emoji,
+    id
+  );
   const list = db.prepare('SELECT * FROM lists WHERE id = ?').get(id) as ListRow;
   res.json(toDTO(list, req.user!.id));
 });

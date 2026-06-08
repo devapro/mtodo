@@ -51,10 +51,15 @@ export const api = {
 
   // lists
   getLists: () => request<List[]>('/lists'),
-  createList: (name: string, color?: string | null) =>
-    request<List>('/lists', { method: 'POST', body: JSON.stringify({ name, color }) }),
-  updateList: (id: number, body: Partial<{ name: string; color: string | null }>) =>
-    request<List>(`/lists/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  createList: (name: string, opts: { color?: string | null; emoji?: string | null } = {}) =>
+    request<List>('/lists', {
+      method: 'POST',
+      body: JSON.stringify({ name, color: opts.color, emoji: opts.emoji }),
+    }),
+  updateList: (
+    id: number,
+    body: Partial<{ name: string; color: string | null; emoji: string | null }>
+  ) => request<List>(`/lists/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   deleteList: (id: number) => request<void>(`/lists/${id}`, { method: 'DELETE' }),
 
   // list sharing

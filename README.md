@@ -19,6 +19,7 @@ A simple, modern TODO Proof of Concept built with a TypeScript stack.
 - 📝 **Markdown** – task descriptions are written in a Markdown editor and rendered as HTML.
 - 🌗 **Dark / light theme** – toggle in the navbar; preference is remembered.
 - 📱 **Responsive, modern UI.**
+- 📲 **Installable PWA** – installable on desktop & mobile (Chrome/Edge/Safari), runs in a standalone window, works offline via a service worker, with an auto-updating cache.
 
 ## Project structure
 
@@ -59,6 +60,27 @@ npm run dev        # http://localhost:5173
 ```
 
 The client reads the API base URL from `VITE_API_URL` (defaults to `http://localhost:4000/api`).
+
+## Progressive Web App (PWA)
+
+The client is a PWA powered by [`vite-plugin-pwa`](https://vite-pwa-org.netlify.app/):
+
+- A web app manifest (`manifest.webmanifest`) and icon set are generated from
+  `client/public/logo.svg` at build time.
+- A Workbox **service worker** precaches the app shell and uses a
+  *network-first* strategy for `/api` GET requests, so previously loaded data
+  is available offline. New versions auto-update (`registerType: 'autoUpdate'`).
+
+**Install it:**
+
+1. Build & serve over `http://localhost` or HTTPS (service workers require a
+   secure context; `localhost` counts). The Docker setup serves it on
+   `http://localhost:5173`.
+2. In Chrome/Edge, click the **install icon** in the address bar (or
+   *⋮ → Install mTodo*). On iOS Safari use *Share → Add to Home Screen*.
+
+> During `vite dev`, the service worker is enabled (`devOptions.enabled`), so
+> you can test install/offline behavior locally too.
 
 ## Environment variables
 

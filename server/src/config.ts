@@ -44,7 +44,9 @@ export const config = {
     // BotFather token. When empty, the Telegram integration stays disabled.
     botToken: process.env.TELEGRAM_BOT_TOKEN || '',
     // Bot username (without @) used to build deep-links and the login widget.
-    botUsername: process.env.TELEGRAM_BOT_USERNAME || '',
+    // Strip a leading "@" and whitespace so a value like "@MyBot" still works —
+    // Telegram's login widget and t.me links require the bare username.
+    botUsername: (process.env.TELEGRAM_BOT_USERNAME || '').trim().replace(/^@+/, ''),
   },
 };
 

@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/dev-dist
+**/build
+**/*.log
+**/.DS_Store
+.git
+.env
+**/data
+**/*.sqlite
+**/*.sqlite3

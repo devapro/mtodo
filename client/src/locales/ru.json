@@ -35,7 +35,16 @@
     "language": "Язык",
     "theme": "Тема",
     "account": "Аккаунт",
-    "signedInAs": "Вы вошли как"
+    "signedInAs": "Вы вошли как",
+    "telegram": "Telegram",
+    "tgHint": "Привяжите аккаунт Telegram, чтобы управлять задачами через бота.",
+    "tgLink": "Привязать Telegram",
+    "tgStep1": "Откройте бота и отправьте:",
+    "tgOpenBot": "Открыть бота в Telegram",
+    "tgCheck": "Я привязал(а)",
+    "tgConnectedAs": "Подключено как",
+    "tgUnlink": "Отвязать",
+    "tgConfirmUnlink": "Отключить ваш аккаунт Telegram от mTodo?"
   },
   "auth": {
     "welcomeBack": "С возвращением",
@@ -47,7 +56,8 @@
     "signIn": "Войти",
     "signUp": "Зарегистрироваться",
     "noAccount": "Нет аккаунта? Зарегистрируйтесь",
-    "haveAccount": "Уже есть аккаунт? Войдите"
+    "haveAccount": "Уже есть аккаунт? Войдите",
+    "or": "или"
   },
   "dashboard": {
     "menu": "Меню",
@@ -81,6 +91,20 @@
     "searchPlaceholder": "Поиск задач или #тегов…",
     "showCompleted": "Показывать выполненные",
     "empty": "Здесь пока пусто. Создайте свою первую задачу!",
+    "emptyToday": "На сегодня задач нет. Добавьте выше или нажмите N для полной формы.",
+    "emptyList": "Этот список пуст. Добавьте первую задачу!",
+    "emptyFiltered": "Нет задач, соответствующих поиску или фильтру.",
+    "createFirstTask": "Создать первую задачу",
+    "taskAdded": "Задача добавлена",
+    "stats": "{{open}} открыто · {{done}} выполнено",
+    "overdueCount": "{{count}} просрочено",
+    "sortBy": "Сортировка",
+    "sortManual": "Сначала новые",
+    "sortDue": "По дате",
+    "sortTitle": "По названию",
+    "sortCompleted": "По статусу",
+    "listActions": "Действия со списком",
+    "keyboardHints": "Горячие клавиши: N — новая задача · / — поиск · T — сегодня · A — все задачи",
     "confirmDeleteTask": "Удалить задачу «{{title}}»?",
     "confirmDeleteList": "Удалить список «{{name}}»? Задачи останутся без списка.",
     "confirmLeaveList": "Покинуть общий список «{{name}}»? Вы потеряете доступ до повторного приглашения."
@@ -97,9 +121,14 @@
     "weekly": "Еженедельно",
     "monthly": "Ежемесячно",
     "customEvery": "Каждые {{interval}} {{unit}}",
+    "today": "Сегодня",
+    "tomorrow": "Завтра",
+    "yesterday": "Вчера",
     "toggleDescription": "Показать описание",
     "edit": "Редактировать",
-    "delete": "Удалить"
+    "delete": "Удалить",
+    "markComplete": "Отметить выполненной",
+    "markIncomplete": "Снять отметку"
   },
   "taskModal": {
     "editTask": "Редактировать задачу",
@@ -155,6 +184,10 @@
     "clickToRemove": "Нажмите, чтобы удалить",
     "create": "+ Создать «{{tag}}»"
   },
+  "confirm": {
+    "defaultTitle": "Подтверждение",
+    "defaultConfirm": "Подтвердить"
+  },
   "admin": {
     "title": "Админка · Пользователи",
     "id": "#",
@@ -173,6 +206,9 @@
     "resetPasswordFor": "Задайте новый пароль для {{email}}.",
     "create": "Создать",
     "save": "Сохранить",
-    "cancel": "Отмена"
+    "cancel": "Отмена",
+    "telegramLinked": "Telegram привязан",
+    "telegramLinkedAs": "Telegram привязан как @{{username}}",
+    "userDeleted": "Пользователь удалён"
   }
 }

@@ -1,4 +1,14 @@
-import { AdminUser, List, ListShare, Tag, Task, TaskInput, User } from './types';
+import {
+  AdminUser,
+  List,
+  ListShare,
+  Tag,
+  Task,
+  TaskInput,
+  TelegramConfig,
+  TelegramLoginData,
+  User,
+} from './types';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:4000/api';
 
@@ -48,6 +58,20 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
   me: () => request<{ user: User }>('/auth/me'),
+
+  // telegram
+  telegramConfig: () => request<TelegramConfig>('/auth/telegram/config'),
+  telegramLogin: (data: TelegramLoginData) =>
+    request<{ token: string; user: User }>('/auth/telegram', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  telegramLinkCode: () =>
+    request<{ code: string; botUsername: string }>('/auth/telegram/link-code', {
+      method: 'POST',
+    }),
+  telegramUnlink: () =>
+    request<{ user: User }>('/auth/telegram/unlink', { method: 'POST' }),
 
   // lists
   getLists: () => request<List[]>('/lists'),

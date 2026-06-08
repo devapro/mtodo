@@ -1,0 +1,55 @@
+# Run from this folder:  docker compose up --build
+# (build context is the repository root, env vars come from ../.env)
+name: mtodo
+
+services:
+  server:
+    build:
+      context: ..
+      dockerfile: docker/server.Dockerfile
+    container_name: mtodo-server
+    restart: unless-stopped
+    # Load shared secrets/credentials from the repo-root .env file.
+    env_file:
+      - ../.env
+    # Docker-specific overrides (take precedence over env_file).
+    environment:
+      PORT: 4000
+      NODE_ENV: production
+      # SQLite lives on the named volume mounted at /data.
+      DATABASE_FILE: /data/mtodo.sqlite
+    volumes:
+      - mtodo-data:/data
+    ports:
+      - "4000:4000"
+
+  client:
+    build:
+      context: ..
+      dockerfile: docker/client.Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
+    container_name: mtodo-client
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "5173:80"
+
+  # Exposes the client to the public internet via an ngrok tunnel.
+  # Set NGROK_AUTHTOKEN in ../.env (get one at https://dashboard.ngrok.com).
+  # Inspect tunnels / public URL at http://localhost:4040.
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: mtodo-ngrok
+    restart: unless-stopped
+    depends_on:
+      - client
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:-}
+    command: ["http", "client:80"]
+    ports:
+      - "4040:4040"
+
+volumes:
+  mtodo-data:

@@ -35,7 +35,16 @@
     "language": "Језик",
     "theme": "Тема",
     "account": "Налог",
-    "signedInAs": "Пријављени сте као"
+    "signedInAs": "Пријављени сте као",
+    "telegram": "Telegram",
+    "tgHint": "Повежите свој Telegram налог да бисте управљали задацима преко бота.",
+    "tgLink": "Повежи Telegram",
+    "tgStep1": "Отворите бота и пошаљите:",
+    "tgOpenBot": "Отвори бота у Telegram-у",
+    "tgCheck": "Повезао сам",
+    "tgConnectedAs": "Повезано као",
+    "tgUnlink": "Прекини везу",
+    "tgConfirmUnlink": "Прекинути везу вашег Telegram налога са mTodo?"
   },
   "auth": {
     "welcomeBack": "Добро дошли назад",
@@ -47,7 +56,8 @@
     "signIn": "Пријави се",
     "signUp": "Региструј се",
     "noAccount": "Немате налог? Региструјте се",
-    "haveAccount": "Већ имате налог? Пријавите се"
+    "haveAccount": "Већ имате налог? Пријавите се",
+    "or": "или"
   },
   "dashboard": {
     "menu": "Мени",
@@ -81,6 +91,20 @@
     "searchPlaceholder": "Претражите задатке или #ознаке…",
     "showCompleted": "Прикажи завршене",
     "empty": "Овде још нема ничега. Направите свој први задатак!",
+    "emptyToday": "Нема задатака за данас. Додајте изнад или притисните N за пуну форму.",
+    "emptyList": "Ова листа је празна. Додајте први задатак!",
+    "emptyFiltered": "Нема задатака који одговарају претрази или филтеру.",
+    "createFirstTask": "Направите први задатак",
+    "taskAdded": "Задатак додат",
+    "stats": "{{open}} отворено · {{done}} завршено",
+    "overdueCount": "{{count}} закаснело",
+    "sortBy": "Сортирање",
+    "sortManual": "Прво најновије",
+    "sortDue": "По датуму",
+    "sortTitle": "По називу",
+    "sortCompleted": "По статусу",
+    "listActions": "Радње са листом",
+    "keyboardHints": "Пречице: N нови задатак · / претрага · T данас · A сви задаци",
     "confirmDeleteTask": "Обрисати задатак „{{title}}“?",
     "confirmDeleteList": "Обрисати листу „{{name}}“? Задаци ће бити сачувани без листе.",
     "confirmLeaveList": "Напустити дељену листу „{{name}}“? Изгубићете приступ док поново не будете позвани."
@@ -97,9 +121,14 @@
     "weekly": "Недељно",
     "monthly": "Месечно",
     "customEvery": "Свака {{interval}} {{unit}}",
+    "today": "Данас",
+    "tomorrow": "Сутра",
+    "yesterday": "Јуче",
     "toggleDescription": "Прикажи опис",
     "edit": "Уреди",
-    "delete": "Обриши"
+    "delete": "Обриши",
+    "markComplete": "Означи као завршено",
+    "markIncomplete": "Уклони ознаку"
   },
   "taskModal": {
     "editTask": "Уреди задатак",
@@ -155,6 +184,10 @@
     "clickToRemove": "Кликните да уклоните",
     "create": "+ Направи „{{tag}}“"
   },
+  "confirm": {
+    "defaultTitle": "Потврда",
+    "defaultConfirm": "Потврди"
+  },
   "admin": {
     "title": "Админ · Корисници",
     "id": "#",
@@ -173,6 +206,9 @@
     "resetPasswordFor": "Поставите нову лозинку за {{email}}.",
     "create": "Креирај",
     "save": "Сачувај",
-    "cancel": "Откажи"
+    "cancel": "Откажи",
+    "telegramLinked": "Telegram повезан",
+    "telegramLinkedAs": "Telegram повезан као @{{username}}",
+    "userDeleted": "Корисник обрисан"
   }
 }

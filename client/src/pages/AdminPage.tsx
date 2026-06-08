@@ -14,9 +14,13 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { AdminUser, Role } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 
 export default function AdminPage() {
   const { user } = useAuth();
+  const confirm = useConfirm();
+  const toast = useToast();
   const { t } = useTranslation();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,12 +52,18 @@ export default function AdminPage() {
   useEffect(load, []);
 
   const remove = async (u: AdminUser) => {
-    if (!confirm(t('admin.confirmDelete', { email: u.email }))) return;
+    const ok = await confirm({
+      message: t('admin.confirmDelete', { email: u.email }),
+      confirmLabel: t('common.delete'),
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await api.deleteUser(u.id);
       setUsers((prev) => prev.filter((x) => x.id !== u.id));
+      toast.success(t('admin.userDeleted'));
     } catch (e) {
-      setError((e as Error).message);
+      toast.error((e as Error).message);
     }
   };
 
@@ -136,7 +146,23 @@ export default function AdminPage() {
                 {users.map((u) => (
                   <tr key={u.id}>
                     <td>{u.id}</td>
-                    <td>{u.email}</td>
+                    <td>
+                      {u.email}
+                      {u.telegram_id && (
+                        <span
+                          className="ms-2"
+                          title={
+                            u.telegram_username
+                              ? t('admin.telegramLinkedAs', { username: u.telegram_username })
+                              : t('admin.telegramLinked')
+                          }
+                          aria-label={t('admin.telegramLinked')}
+                          style={{ cursor: 'default' }}
+                        >
+                          ✈️
+                        </span>
+                      )}
+                    </td>
                     <td>
                       <Badge bg={u.role === 'admin' ? 'primary' : 'secondary'}>{u.role}</Badge>
                     </td>

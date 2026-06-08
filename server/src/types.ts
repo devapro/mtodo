@@ -6,6 +6,11 @@ export interface UserRow {
   password_hash: string;
   role: Role;
   created_at: string;
+  telegram_id: string | null;
+  telegram_username: string | null;
+  telegram_first_name: string | null;
+  telegram_link_code: string | null;
+  telegram_link_expires: string | null;
 }
 
 export interface PublicUser {
@@ -13,6 +18,18 @@ export interface PublicUser {
   email: string;
   role: Role;
   created_at: string;
+  telegram_id: string | null;
+  telegram_username: string | null;
+}
+
+export interface TelegramLoginData {
+  id: number | string;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+  auth_date: number | string;
+  hash: string;
 }
 
 export interface ListRow {

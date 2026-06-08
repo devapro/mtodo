@@ -35,7 +35,16 @@
     "language": "Мова",
     "theme": "Тема",
     "account": "Акаунт",
-    "signedInAs": "Ви увійшли як"
+    "signedInAs": "Ви увійшли як",
+    "telegram": "Telegram",
+    "tgHint": "Прив’яжіть акаунт Telegram, щоб керувати завданнями через бота.",
+    "tgLink": "Прив’язати Telegram",
+    "tgStep1": "Відкрийте бота та надішліть:",
+    "tgOpenBot": "Відкрити бота в Telegram",
+    "tgCheck": "Я прив’язав(ла)",
+    "tgConnectedAs": "Підключено як",
+    "tgUnlink": "Відв’язати",
+    "tgConfirmUnlink": "Відключити ваш акаунт Telegram від mTodo?"
   },
   "auth": {
     "welcomeBack": "З поверненням",
@@ -47,7 +56,8 @@
     "signIn": "Увійти",
     "signUp": "Зареєструватися",
     "noAccount": "Немає акаунта? Зареєструйтеся",
-    "haveAccount": "Вже маєте акаунт? Увійдіть"
+    "haveAccount": "Вже маєте акаунт? Увійдіть",
+    "or": "або"
   },
   "dashboard": {
     "menu": "Меню",
@@ -82,6 +92,20 @@
     "searchPlaceholder": "Пошук завдань або #тегів…",
     "showCompleted": "Показувати виконані",
     "empty": "Тут поки порожньо. Створіть своє перше завдання!",
+    "emptyToday": "На сьогодні завдань немає. Додайте вище або натисніть N для повної форми.",
+    "emptyList": "Цей список порожній. Додайте перше завдання!",
+    "emptyFiltered": "Немає завдань, що відповідають пошуку або фільтру.",
+    "createFirstTask": "Створити перше завдання",
+    "taskAdded": "Завдання додано",
+    "stats": "{{open}} відкрито · {{done}} виконано",
+    "overdueCount": "{{count}} прострочено",
+    "sortBy": "Сортування",
+    "sortManual": "Спочатку нові",
+    "sortDue": "За датою",
+    "sortTitle": "За назвою",
+    "sortCompleted": "За статусом",
+    "listActions": "Дії зі списком",
+    "keyboardHints": "Гарячі клавіші: N — нове завдання · / — пошук · T — сьогодні · A — усі завдання",
     "confirmDeleteTask": "Видалити завдання «{{title}}»?",
     "confirmDeleteList": "Видалити список «{{name}}»? Завдання залишаться без списку.",
     "confirmLeaveList": "Покинути спільний список «{{name}}»? Ви втратите доступ до повторного запрошення."
@@ -98,9 +122,14 @@
     "weekly": "Щотижня",
     "monthly": "Щомісяця",
     "customEvery": "Кожні {{interval}} {{unit}}",
+    "today": "Сьогодні",
+    "tomorrow": "Завтра",
+    "yesterday": "Вчора",
     "toggleDescription": "Показати опис",
     "edit": "Редагувати",
-    "delete": "Видалити"
+    "delete": "Видалити",
+    "markComplete": "Позначити виконаним",
+    "markIncomplete": "Зняти позначку"
   },
   "taskModal": {
     "editTask": "Редагувати завдання",
@@ -156,6 +185,10 @@
     "clickToRemove": "Натисніть, щоб вилучити",
     "create": "+ Створити «{{tag}}»"
   },
+  "confirm": {
+    "defaultTitle": "Підтвердження",
+    "defaultConfirm": "Підтвердити"
+  },
   "admin": {
     "title": "Адмінка · Користувачі",
     "id": "#",
@@ -174,6 +207,9 @@
     "resetPasswordFor": "Встановіть новий пароль для {{email}}.",
     "create": "Створити",
     "save": "Зберегти",
-    "cancel": "Скасувати"
+    "cancel": "Скасувати",
+    "telegramLinked": "Telegram прив’язано",
+    "telegramLinkedAs": "Telegram прив’язано як @{{username}}",
+    "userDeleted": "Користувача видалено"
   }
 }

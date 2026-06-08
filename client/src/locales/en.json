@@ -35,7 +35,16 @@
     "language": "Language",
     "theme": "Theme",
     "account": "Account",
-    "signedInAs": "Signed in as"
+    "signedInAs": "Signed in as",
+    "telegram": "Telegram",
+    "tgHint": "Link your Telegram account to manage your todos from the bot.",
+    "tgLink": "Link Telegram",
+    "tgStep1": "Open the bot and send:",
+    "tgOpenBot": "Open bot in Telegram",
+    "tgCheck": "I've linked it",
+    "tgConnectedAs": "Connected as",
+    "tgUnlink": "Unlink",
+    "tgConfirmUnlink": "Disconnect your Telegram account from mTodo?"
   },
   "auth": {
     "welcomeBack": "Welcome back",
@@ -47,7 +56,8 @@
     "signIn": "Sign in",
     "signUp": "Sign up",
     "noAccount": "Don't have an account? Sign up",
-    "haveAccount": "Already have an account? Sign in"
+    "haveAccount": "Already have an account? Sign in",
+    "or": "or"
   },
   "dashboard": {
     "menu": "Menu",
@@ -72,7 +82,7 @@
     "deleteList": "🗑️ Delete list",
     "ownedBy": "Owned by {{email}}",
     "leaveList": "🚪 Leave list",
-    "quickAddPlaceholder": "Quick add a task — type a title and press Enter",
+    "quickAddPlaceholder": "Quick add — e.g. Buy milk #groceries tomorrow",
     "adding": "Adding…",
     "moreOptions": "More options",
     "moreOptionsTitle": "Open full form with more options",
@@ -80,6 +90,20 @@
     "searchPlaceholder": "Search tasks or #tags…",
     "showCompleted": "Show completed",
     "empty": "Nothing here yet. Create your first task!",
+    "emptyToday": "No tasks for today. Add one above or press N for the full form.",
+    "emptyList": "This list is empty. Add your first task!",
+    "emptyFiltered": "No tasks match your search or filter.",
+    "createFirstTask": "Create your first task",
+    "taskAdded": "Task added",
+    "stats": "{{open}} open · {{done}} done",
+    "overdueCount": "{{count}} overdue",
+    "sortBy": "Sort by",
+    "sortManual": "Newest first",
+    "sortDue": "Due date",
+    "sortTitle": "Title",
+    "sortCompleted": "Status",
+    "listActions": "List actions",
+    "keyboardHints": "Shortcuts: N new task · / search · T today · A all tasks",
     "confirmDeleteTask": "Delete task \"{{title}}\"?",
     "confirmDeleteList": "Delete list \"{{name}}\"? Tasks will be kept without a list.",
     "confirmLeaveList": "Leave shared list \"{{name}}\"? You'll lose access until re-invited."
@@ -96,9 +120,14 @@
     "weekly": "Weekly",
     "monthly": "Monthly",
     "customEvery": "Every {{interval}} {{unit}}(s)",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "yesterday": "Yesterday",
     "toggleDescription": "Toggle description",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "markComplete": "Mark complete",
+    "markIncomplete": "Mark incomplete"
   },
   "taskModal": {
     "editTask": "Edit task",
@@ -154,6 +183,10 @@
     "clickToRemove": "Click to remove",
     "create": "+ Create “{{tag}}”"
   },
+  "confirm": {
+    "defaultTitle": "Confirm",
+    "defaultConfirm": "Confirm"
+  },
   "admin": {
     "title": "Admin · Users",
     "id": "#",
@@ -172,6 +205,9 @@
     "resetPasswordFor": "Set a new password for {{email}}.",
     "create": "Create",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "telegramLinked": "Telegram linked",
+    "telegramLinkedAs": "Telegram linked as @{{username}}",
+    "userDeleted": "User deleted"
   }
 }

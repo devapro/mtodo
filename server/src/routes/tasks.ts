@@ -4,11 +4,35 @@ const db = { prepare: db_prepare };
 import { authRequired } from '../auth';
 import { accessibleListIds, canEditList, getListAccess } from '../access';
 import { TaskRow, TagRow, RepeatType } from '../types';
+import {
+  validateBody,
+  validateParams,
+  idParamSchema,
+  createTaskSchema,
+  updateTaskSchema,
+} from '../validate';
 
 const router = Router();
 router.use(authRequired);
 
 const REPEAT_TYPES: RepeatType[] = ['none', 'daily', 'weekly', 'monthly', 'custom'];
+
+/**
+ * Parse the persisted `repeat_days` JSON safely. A malformed value (e.g. from a
+ * manual DB edit or an older bug) must never crash a request, so we swallow
+ * parse errors and fall back to `null`.
+ */
+function safeParseRepeatDays(value: string | null): number[] | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return null;
+    const nums = parsed.map((v) => Number(v)).filter((n) => !Number.isNaN(n));
+    return nums.length ? nums : null;
+  } catch {
+    return null;
+  }
+}
 
 interface TaskDTO extends Omit<TaskRow, 'completed'> {
   completed: boolean;
@@ -95,7 +119,7 @@ function occursOnDate(row: TaskRow, dateStr: string): boolean {
   const start = startStr ? new Date(startStr + 'T00:00:00') : null;
   if (start && date < start) return false;
 
-  const days = row.repeat_days ? (JSON.parse(row.repeat_days) as number[]) : null;
+  const days = safeParseRepeatDays(row.repeat_days);
 
   switch (row.repeat_type) {
     case 'daily':
@@ -165,7 +189,7 @@ router.get('/', (req, res) => {
   res.json(rows.map(serialize));
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', validateParams(idParamSchema), (req, res) => {
   const row = db
     .prepare('SELECT * FROM tasks WHERE id = ?')
     .get(Number(req.params.id)) as TaskRow | undefined;
@@ -175,11 +199,10 @@ router.get('/:id', (req, res) => {
   res.json(serialize(row));
 });
 
-router.post('/', (req, res) => {
+router.post('/', validateBody(createTaskSchema), (req, res) => {
   const userId = req.user!.id;
-  const b = req.body || {};
-  const title = String(b.title || '').trim();
-  if (!title) return res.status(400).json({ error: 'Task title is required' });
+  const b = req.body;
+  const title = String(b.title).trim();
 
   // If the task targets a list, the user must be allowed to edit that list.
   if (b.list_id) {
@@ -220,7 +243,7 @@ router.post('/', (req, res) => {
   res.status(201).json(serialize(row));
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', validateParams(idParamSchema), validateBody(updateTaskSchema), (req, res) => {
   const userId = req.user!.id;
   const id = Number(req.params.id);
   const existing = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as
@@ -233,9 +256,8 @@ router.put('/:id', (req, res) => {
     return res.status(403).json({ error: 'You do not have permission to edit this task' });
   }
 
-  const b = req.body || {};
+  const b = req.body;
   const title = b.title !== undefined ? String(b.title).trim() : existing.title;
-  if (!title) return res.status(400).json({ error: 'Task title is required' });
 
   // If moving the task to a different list, ensure the user can edit that list.
   if (b.list_id !== undefined && b.list_id) {
@@ -276,7 +298,7 @@ router.put('/:id', (req, res) => {
   res.json(serialize(row));
 });
 
-router.patch('/:id/toggle', (req, res) => {
+router.patch('/:id/toggle', validateParams(idParamSchema), (req, res) => {
   const id = Number(req.params.id);
   const existing = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as
     | TaskRow
@@ -295,7 +317,7 @@ router.patch('/:id/toggle', (req, res) => {
   res.json(serialize(row));
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', validateParams(idParamSchema), (req, res) => {
   const id = Number(req.params.id);
   const existing = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as
     | TaskRow

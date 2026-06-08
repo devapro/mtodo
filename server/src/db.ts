@@ -126,6 +126,26 @@ function runMigrations(): void {
   if (!columnExists('lists', 'emoji')) {
     db.exec('ALTER TABLE lists ADD COLUMN emoji TEXT');
   }
+
+  // Telegram integration columns on the users table.
+  if (!columnExists('users', 'telegram_id')) {
+    db.exec('ALTER TABLE users ADD COLUMN telegram_id TEXT');
+  }
+  if (!columnExists('users', 'telegram_username')) {
+    db.exec('ALTER TABLE users ADD COLUMN telegram_username TEXT');
+  }
+  if (!columnExists('users', 'telegram_first_name')) {
+    db.exec('ALTER TABLE users ADD COLUMN telegram_first_name TEXT');
+  }
+  if (!columnExists('users', 'telegram_link_code')) {
+    db.exec('ALTER TABLE users ADD COLUMN telegram_link_code TEXT');
+  }
+  if (!columnExists('users', 'telegram_link_expires')) {
+    db.exec('ALTER TABLE users ADD COLUMN telegram_link_expires TEXT');
+  }
+  db.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id) WHERE telegram_id IS NOT NULL'
+  );
 }
 
 function seedAdmin(): void {

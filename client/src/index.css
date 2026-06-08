@@ -20,7 +20,7 @@ body {
 
 .task-card {
   border-radius: var(--mtodo-radius);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.2s ease;
 }
 .task-card:hover {
   transform: translateY(-2px);
@@ -29,6 +29,21 @@ body {
 .task-card.done .task-title {
   text-decoration: line-through;
   opacity: 0.6;
+}
+.task-card.overdue {
+  border-left: 3px solid var(--bs-danger);
+}
+.task-card.mutating {
+  opacity: 0.65;
+  pointer-events: none;
+}
+.task-card.done {
+  animation: checkOff 0.25s ease;
+}
+@keyframes checkOff {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
 }
 
 .sidebar {
@@ -61,4 +76,20 @@ body {
   max-height: 220px;
   overflow-y: auto;
   width: 100%;
+}
+
+.empty-state .empty-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.keyboard-hints {
+  opacity: 0.55;
+  font-size: 0.8rem;
+}
+
+/* Clickable tag badges in the sidebar */
+.tag-chip[role='button'],
+button.tag-chip {
+  cursor: pointer;
 }

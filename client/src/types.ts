@@ -5,10 +5,27 @@ export interface User {
   email: string;
   role: Role;
   created_at: string;
+  telegram_id: string | null;
+  telegram_username: string | null;
 }
 
 export interface AdminUser extends User {
   task_count: number;
+}
+
+export interface TelegramConfig {
+  enabled: boolean;
+  botUsername: string | null;
+}
+
+export interface TelegramLoginData {
+  id: number;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+  auth_date: number;
+  hash: string;
 }
 
 export type ListRole = 'owner' | 'editor' | 'viewer';

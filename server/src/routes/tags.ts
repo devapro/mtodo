@@ -3,6 +3,7 @@ import { prepare as db_prepare } from '../db';
 const db = { prepare: db_prepare };
 import { authRequired } from '../auth';
 import { TagRow } from '../types';
+import { validateBody, validateParams, idParamSchema, createTagSchema } from '../validate';
 
 const router = Router();
 router.use(authRequired);
@@ -14,9 +15,8 @@ router.get('/', (req, res) => {
   res.json(tags);
 });
 
-router.post('/', (req, res) => {
-  const name = String(req.body?.name || '').trim();
-  if (!name) return res.status(400).json({ error: 'Tag name is required' });
+router.post('/', validateBody(createTagSchema), (req, res) => {
+  const name = String(req.body.name).trim();
 
   const existing = db
     .prepare('SELECT * FROM tags WHERE user_id = ? AND name = ? COLLATE NOCASE')
@@ -31,7 +31,7 @@ router.post('/', (req, res) => {
   );
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', validateParams(idParamSchema), (req, res) => {
   const id = Number(req.params.id);
   const info = db
     .prepare('DELETE FROM tags WHERE id = ? AND user_id = ?')

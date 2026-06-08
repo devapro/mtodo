@@ -4,17 +4,23 @@ import { prepare as db_prepare } from '../db';
 const db = { prepare: db_prepare };
 import { authRequired, adminRequired } from '../auth';
 import { PublicUser, Role } from '../types';
+import {
+  validateBody,
+  validateParams,
+  idParamSchema,
+  createUserSchema,
+  resetPasswordSchema,
+} from '../validate';
 
 const router = Router();
 router.use(authRequired, adminRequired);
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // GET /admin/users - list all users with task counts
 router.get('/users', (_req, res) => {
   const users = db
     .prepare(
       `SELECT u.id, u.email, u.role, u.created_at,
+              u.telegram_id, u.telegram_username,
               (SELECT COUNT(*) FROM tasks t WHERE t.user_id = u.id) AS task_count
        FROM users u
        ORDER BY u.created_at ASC`
@@ -24,17 +30,10 @@ router.get('/users', (_req, res) => {
 });
 
 // POST /admin/users - create a new user
-router.post('/users', (req, res) => {
-  const email = String(req.body?.email || '').trim().toLowerCase();
-  const password = String(req.body?.password || '');
-  const role: Role = req.body?.role === 'admin' ? 'admin' : 'user';
-
-  if (!EMAIL_RE.test(email)) {
-    return res.status(400).json({ error: 'A valid email is required' });
-  }
-  if (password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' });
-  }
+router.post('/users', validateBody(createUserSchema), (req, res) => {
+  const email = String(req.body.email);
+  const password = String(req.body.password);
+  const role: Role = req.body.role === 'admin' ? 'admin' : 'user';
 
   const exists = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
   if (exists) {
@@ -49,6 +48,7 @@ router.post('/users', (req, res) => {
   const user = db
     .prepare(
       `SELECT u.id, u.email, u.role, u.created_at,
+              u.telegram_id, u.telegram_username,
               (SELECT COUNT(*) FROM tasks t WHERE t.user_id = u.id) AS task_count
        FROM users u WHERE u.id = ?`
     )
@@ -58,13 +58,13 @@ router.post('/users', (req, res) => {
 });
 
 // PATCH /admin/users/:id/password - reset a user's password
-router.patch('/users/:id/password', (req, res) => {
+router.patch(
+  '/users/:id/password',
+  validateParams(idParamSchema),
+  validateBody(resetPasswordSchema),
+  (req, res) => {
   const id = Number(req.params.id);
-  const password = String(req.body?.password || '');
-
-  if (password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' });
-  }
+  const password = String(req.body.password);
 
   const user = db.prepare('SELECT id FROM users WHERE id = ?').get(id) as
     | { id: number }
@@ -77,7 +77,7 @@ router.patch('/users/:id/password', (req, res) => {
 });
 
 // DELETE /admin/users/:id - remove a user (cannot remove yourself)
-router.delete('/users/:id', (req, res) => {
+router.delete('/users/:id', validateParams(idParamSchema), (req, res) => {
   const id = Number(req.params.id);
   if (id === req.user!.id) {
     return res.status(400).json({ error: 'You cannot delete your own account' });

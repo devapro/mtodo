@@ -1,16 +1,18 @@
 import { useState } from 'react';
-import { Card, Form, Badge, Button, Collapse } from 'react-bootstrap';
+import { Card, Form, Badge, Button, Collapse, Spinner } from 'react-bootstrap';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { List, Task } from '../types';
+import { describeDueDate, isOverdue } from '../utils';
 
 interface Props {
   task: Task;
   lists: List[];
   canEdit?: boolean;
+  busy?: boolean;
   onToggle: (task: Task) => void;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
@@ -45,6 +47,7 @@ export default function TaskCard({
   task,
   lists,
   canEdit = true,
+  busy = false,
   onToggle,
   onEdit,
   onDelete,
@@ -53,18 +56,34 @@ export default function TaskCard({
   const [open, setOpen] = useState(false);
   const list = lists.find((l) => l.id === task.list_id);
   const repeat = repeatLabel(task, t);
+  const overdue = isOverdue(task.due_date, task.completed);
+
+  const dueBadge = task.due_date
+    ? describeDueDate(task.due_date, {
+        today: t('taskCard.today'),
+        tomorrow: t('taskCard.tomorrow'),
+        yesterday: t('taskCard.yesterday'),
+      })
+    : null;
 
   return (
-    <Card className={`task-card mb-2 ${task.completed ? 'done' : ''}`}>
+    <Card
+      className={`task-card mb-2 ${task.completed ? 'done' : ''} ${overdue ? 'overdue' : ''} ${busy ? 'mutating' : ''}`}
+    >
       <Card.Body className="py-2">
         <div className="d-flex align-items-start gap-2">
-          <Form.Check
-            type="checkbox"
-            className="mt-1"
-            checked={task.completed}
-            disabled={!canEdit}
-            onChange={() => onToggle(task)}
-          />
+          {busy ? (
+            <Spinner animation="border" size="sm" className="mt-1 flex-shrink-0" />
+          ) : (
+            <Form.Check
+              type="checkbox"
+              className="mt-1"
+              checked={task.completed}
+              disabled={!canEdit}
+              onChange={() => onToggle(task)}
+              aria-label={task.completed ? t('taskCard.markIncomplete') : t('taskCard.markComplete')}
+            />
+          )}
           <div className="flex-grow-1">
             <div className="d-flex justify-content-between align-items-start">
               <span className="task-title fw-semibold">{task.title}</span>
@@ -75,7 +94,8 @@ export default function TaskCard({
                     size="sm"
                     className="p-0 text-decoration-none"
                     onClick={() => setOpen((o) => !o)}
-                    title={t('taskCard.toggleDescription')}
+                    aria-label={t('taskCard.toggleDescription')}
+                    aria-expanded={open}
                   >
                     {open ? '▲' : '▼'}
                   </Button>
@@ -87,7 +107,8 @@ export default function TaskCard({
                       size="sm"
                       className="p-0 text-decoration-none"
                       onClick={() => onEdit(task)}
-                      title={t('taskCard.edit')}
+                      aria-label={t('taskCard.edit')}
+                      disabled={busy}
                     >
                       ✏️
                     </Button>
@@ -96,7 +117,8 @@ export default function TaskCard({
                       size="sm"
                       className="p-0 text-decoration-none text-danger"
                       onClick={() => onDelete(task)}
-                      title={t('taskCard.delete')}
+                      aria-label={t('taskCard.delete')}
+                      disabled={busy}
                     >
                       🗑️
                     </Button>
@@ -108,12 +130,24 @@ export default function TaskCard({
             <div className="d-flex flex-wrap gap-1 mt-1 align-items-center">
               {list && (
                 <Badge bg="info" className="tag-chip">
-                  {list.name}
+                  {list.emoji ? `${list.emoji} ` : ''}{list.name}
                 </Badge>
               )}
-              {task.due_date && (
-                <Badge bg="secondary" className="tag-chip">
-                  📅 {task.due_date}
+              {dueBadge && (
+                <Badge
+                  bg={
+                    dueBadge.tone === 'overdue'
+                      ? 'danger'
+                      : dueBadge.tone === 'today'
+                        ? 'warning'
+                        : dueBadge.tone === 'soon'
+                          ? 'secondary'
+                          : 'secondary'
+                  }
+                  text={dueBadge.tone === 'today' ? 'dark' : undefined}
+                  className="tag-chip"
+                >
+                  📅 {dueBadge.label}
                 </Badge>
               )}
               {repeat && (
@@ -121,9 +155,9 @@ export default function TaskCard({
                   🔁 {repeat}
                 </Badge>
               )}
-              {task.tags.map((t) => (
-                <Badge key={t} bg="primary" className="tag-chip">
-                  #{t}
+              {task.tags.map((tag) => (
+                <Badge key={tag} bg="primary" className="tag-chip">
+                  #{tag}
                 </Badge>
               ))}
             </div>

@@ -1,12 +1,15 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { api, getToken, setToken } from '../api';
-import { User } from '../types';
+import { TelegramLoginData, User } from '../types';
 
 interface AuthCtx {
   user: User | null;
   loading: boolean;
   signin: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
+  signinWithTelegram: (data: TelegramLoginData) => Promise<void>;
+  setUser: (user: User | null) => void;
+  refresh: () => Promise<void>;
   signout: () => void;
 }
 
@@ -41,13 +44,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   };
 
+  const signinWithTelegram = async (data: TelegramLoginData) => {
+    const res = await api.telegramLogin(data);
+    setToken(res.token);
+    setUser(res.user);
+  };
+
+  const refresh = async () => {
+    const res = await api.me();
+    setUser(res.user);
+  };
+
   const signout = () => {
     setToken(null);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signin, signup, signout }}>
+    <AuthContext.Provider
+      value={{ user, loading, signin, signup, signinWithTelegram, setUser, refresh, signout }}
+    >
       {children}
     </AuthContext.Provider>
   );

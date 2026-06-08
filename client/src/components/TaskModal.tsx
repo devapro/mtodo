@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import TagInput from './TagInput';
 import { List, RepeatType, RepeatUnit, Task, TaskInput } from '../types';
 import { useTheme } from '../context/ThemeContext';
+import { safeParseRepeatDays } from '../utils';
 
 interface Props {
   show: boolean;
@@ -57,7 +58,7 @@ export default function TaskModal({
       setRepeatType(task.repeat_type);
       setRepeatInterval(task.repeat_interval || 1);
       setRepeatUnit((task.repeat_unit as RepeatUnit) || 'day');
-      const days = task.repeat_days ? (JSON.parse(task.repeat_days) as number[]) : [];
+      const days = safeParseRepeatDays(task.repeat_days);
       if (task.repeat_type === 'weekly') setWeekdays(days);
       else setWeekdays([]);
       setMonthDays(task.repeat_type === 'monthly' ? days.join(', ') : '');

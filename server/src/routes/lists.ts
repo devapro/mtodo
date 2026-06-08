@@ -4,6 +4,14 @@ const db = { prepare: db_prepare };
 import { authRequired } from '../auth';
 import { getListAccess } from '../access';
 import { ListRow, ListDTO, ListShareDTO, UserRow } from '../types';
+import {
+  validateBody,
+  validateParams,
+  idParamSchema,
+  createListSchema,
+  updateListSchema,
+  shareListSchema,
+} from '../validate';
 
 const router = Router();
 router.use(authRequired);
@@ -71,11 +79,10 @@ router.get('/', (req, res) => {
   res.json(all.map((l) => toDTO(l, userId)));
 });
 
-router.post('/', (req, res) => {
-  const name = String(req.body?.name || '').trim();
-  const color = req.body?.color ? String(req.body.color) : null;
-  const emoji = normalizeEmoji(req.body?.emoji);
-  if (!name) return res.status(400).json({ error: 'List name is required' });
+router.post('/', validateBody(createListSchema), (req, res) => {
+  const name = String(req.body.name).trim();
+  const color = req.body.color ? String(req.body.color) : null;
+  const emoji = normalizeEmoji(req.body.emoji);
 
   const info = db
     .prepare('INSERT INTO lists (user_id, name, color, emoji) VALUES (?, ?, ?, ?)')
@@ -86,7 +93,7 @@ router.post('/', (req, res) => {
   res.status(201).json(toDTO(list, req.user!.id));
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', validateParams(idParamSchema), validateBody(updateListSchema), (req, res) => {
   const id = Number(req.params.id);
   // Only the owner can rename / recolor the list.
   const existing = db
@@ -108,7 +115,7 @@ router.put('/:id', (req, res) => {
   res.json(toDTO(list, req.user!.id));
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', validateParams(idParamSchema), (req, res) => {
   const id = Number(req.params.id);
   const info = db
     .prepare('DELETE FROM lists WHERE id = ? AND user_id = ?')
@@ -136,7 +143,7 @@ function ownsList(userId: number, listId: number): boolean {
 }
 
 // GET /lists/:id/shares - owner only
-router.get('/:id/shares', (req, res) => {
+router.get('/:id/shares', validateParams(idParamSchema), (req, res) => {
   const id = Number(req.params.id);
   if (!ownsList(req.user!.id, id)) {
     return res.status(403).json({ error: 'Only the list owner can manage sharing' });
@@ -145,15 +152,14 @@ router.get('/:id/shares', (req, res) => {
 });
 
 // POST /lists/:id/shares { email, can_edit } - owner only, upsert
-router.post('/:id/shares', (req, res) => {
+router.post('/:id/shares', validateParams(idParamSchema), validateBody(shareListSchema), (req, res) => {
   const id = Number(req.params.id);
   if (!ownsList(req.user!.id, id)) {
     return res.status(403).json({ error: 'Only the list owner can share this list' });
   }
 
-  const email = String(req.body?.email || '').trim().toLowerCase();
-  const canEdit = req.body?.can_edit ? 1 : 0;
-  if (!email) return res.status(400).json({ error: 'A user email is required' });
+  const email = String(req.body.email);
+  const canEdit = req.body.can_edit ? 1 : 0;
 
   const target = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as
     | UserRow

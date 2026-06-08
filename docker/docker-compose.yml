@@ -1,5 +1,6 @@
-# Run from this folder:  docker compose -p mtodo up --build
-# (build context is the repository root, env vars come from ../.env)
+# Run from this folder (build context is the repository root, env vars come from ../.env):
+#   Without public tunnel:  docker compose -p mtodo up --build
+#   With ngrok tunnel:       docker compose -p mtodo --profile tunnel up --build
 #
 # Note: the top-level `name:` key requires Docker Compose v2 (`docker compose`).
 # The legacy v1 binary (`docker-compose`) rejects it, so the project name is
@@ -42,7 +43,12 @@ services:
   # Exposes the client to the public internet via an ngrok tunnel.
   # Set NGROK_AUTHTOKEN in ../.env (get one at https://dashboard.ngrok.com).
   # Inspect tunnels / public URL at http://localhost:4040.
+  #
+  # Behind the "tunnel" profile, so it is NOT started by a plain `up`.
+  #   Without ngrok:  docker compose -p mtodo up --build
+  #   With ngrok:     docker compose -p mtodo --profile tunnel up --build
   ngrok:
+    profiles: ["tunnel"]
     image: ngrok/ngrok:latest
     container_name: mtodo-ngrok
     restart: unless-stopped

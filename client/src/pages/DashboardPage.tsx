@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Container, Row, Col, Card, Button, ListGroup, Form, Alert, Spinner, InputGroup } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, ListGroup, Form, Alert, Spinner, InputGroup, Badge } from 'react-bootstrap';
 import { api } from '../api';
 import { List, Task, TaskInput } from '../types';
 import TaskCard from '../components/TaskCard';
@@ -25,9 +25,15 @@ export default function DashboardPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
+  const [prefillTitle, setPrefillTitle] = useState('');
   const [newListName, setNewListName] = useState('');
   const [search, setSearch] = useState('');
   const [showCompleted, setShowCompleted] = useState(true);
+  const [quickTitle, setQuickTitle] = useState('');
+  const [quickBusy, setQuickBusy] = useState(false);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+
+  const activeListId = view.kind === 'list' ? view.id : null;
 
   const loadTasks = useCallback(async () => {
     setError(null);
@@ -90,17 +96,39 @@ export default function DashboardPage() {
     if (view.kind === 'list' && view.id === list.id) setView({ kind: 'today' });
   };
 
+  const quickAdd = async () => {
+    const title = quickTitle.trim();
+    if (!title) return;
+    setQuickBusy(true);
+    try {
+      await saveTask({
+        title,
+        list_id: activeListId,
+        due_date: view.kind === 'today' ? todayStr() : null,
+      });
+      setQuickTitle('');
+    } finally {
+      setQuickBusy(false);
+    }
+  };
+
+  const changeView = (next: View) => {
+    setActiveTag(null);
+    setView(next);
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return tasks
       .filter((t) => (showCompleted ? true : !t.completed))
+      .filter((t) => (activeTag ? t.tags.includes(activeTag) : true))
       .filter((t) =>
         q
           ? t.title.toLowerCase().includes(q) ||
             t.tags.some((tag) => tag.toLowerCase().includes(q))
           : true
       );
-  }, [tasks, search, showCompleted]);
+  }, [tasks, search, showCompleted, activeTag]);
 
   const heading =
     view.kind === 'today'
@@ -109,13 +137,19 @@ export default function DashboardPage() {
         ? 'All tasks'
         : lists.find((l) => l.id === view.id)?.name || 'List';
 
-  const openNew = () => {
+  const openNew = (title = '') => {
     setEditing(null);
+    setPrefillTitle(title);
     setShowModal(true);
   };
   const openEdit = (task: Task) => {
     setEditing(task);
+    setPrefillTitle('');
     setShowModal(true);
+  };
+  const expandQuickAdd = () => {
+    openNew(quickTitle.trim());
+    setQuickTitle('');
   };
 
   if (loading) {
@@ -136,21 +170,21 @@ export default function DashboardPage() {
                 <ListGroup.Item
                   action
                   active={view.kind === 'today'}
-                  onClick={() => setView({ kind: 'today' })}
+                  onClick={() => changeView({ kind: 'today' })}
                 >
                   ⭐ Today
                 </ListGroup.Item>
                 <ListGroup.Item
                   action
                   active={view.kind === 'all'}
-                  onClick={() => setView({ kind: 'all' })}
+                  onClick={() => changeView({ kind: 'all' })}
                 >
                   📋 All tasks
                 </ListGroup.Item>
               </ListGroup>
             </Card>
 
-            <Card>
+            <Card className="mb-3">
               <Card.Header className="fw-semibold">Lists</Card.Header>
               <ListGroup variant="flush">
                 {lists.map((l) => (
@@ -158,7 +192,7 @@ export default function DashboardPage() {
                     key={l.id}
                     action
                     active={view.kind === 'list' && view.id === l.id}
-                    onClick={() => setView({ kind: 'list', id: l.id })}
+                    onClick={() => changeView({ kind: 'list', id: l.id })}
                     className="d-flex justify-content-between align-items-center"
                   >
                     <span>📁 {l.name}</span>
@@ -194,14 +228,76 @@ export default function DashboardPage() {
                 </InputGroup>
               </Card.Body>
             </Card>
+
+            <Card>
+              <Card.Header className="fw-semibold d-flex justify-content-between align-items-center">
+                <span>Tags</span>
+                {activeTag && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="p-0 text-decoration-none"
+                    onClick={() => setActiveTag(null)}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </Card.Header>
+              <Card.Body className="d-flex flex-wrap gap-1">
+                {tagSuggestions.length === 0 && (
+                  <span className="text-secondary small">No tags yet</span>
+                )}
+                {tagSuggestions.map((t) => (
+                  <Badge
+                    key={t}
+                    bg={activeTag === t ? 'primary' : 'secondary'}
+                    className="tag-chip"
+                    role="button"
+                    onClick={() => setActiveTag((cur) => (cur === t ? null : t))}
+                  >
+                    #{t}
+                  </Badge>
+                ))}
+              </Card.Body>
+            </Card>
           </div>
         </Col>
 
         <Col lg={9}>
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-            <h3 className="mb-0">{heading}</h3>
-            <Button onClick={openNew}>+ New task</Button>
+            <h3 className="mb-0">
+              {heading}
+              {activeTag && (
+                <Badge bg="primary" className="ms-2 align-middle">
+                  #{activeTag}
+                </Badge>
+              )}
+            </h3>
           </div>
+
+          <InputGroup className="mb-3">
+            <Form.Control
+              placeholder="Quick add a task — type a title and press Enter"
+              value={quickTitle}
+              onChange={(e) => setQuickTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  quickAdd();
+                }
+              }}
+            />
+            <Button onClick={quickAdd} disabled={quickBusy || !quickTitle.trim()}>
+              {quickBusy ? 'Adding…' : 'Add'}
+            </Button>
+            <Button
+              variant="outline-secondary"
+              onClick={expandQuickAdd}
+              title="Open full form with more options"
+            >
+              More options
+            </Button>
+          </InputGroup>
 
           <div className="d-flex gap-2 mb-3 flex-wrap align-items-center">
             <Form.Control
@@ -246,6 +342,8 @@ export default function DashboardPage() {
         lists={lists}
         tagSuggestions={tagSuggestions}
         defaultDate={view.kind === 'today' ? todayStr() : null}
+        defaultListId={activeListId}
+        defaultTitle={prefillTitle}
         onClose={() => setShowModal(false)}
         onSave={saveTask}
       />

@@ -114,6 +114,126 @@ npm --prefix server start          # node dist/index.js
 npm --prefix client run preview    # static preview on http://localhost:5173
 ```
 
+## Deployment
+
+mTodo is hardened for production but stays **zero-config for local / LAN use**.
+Pick the scenario that matches your setup.
+
+### 1. Local machine / LAN over plain HTTP (zero-config)
+
+This is the default and needs **no extra configuration**. It works on
+`http://localhost` as well as on a LAN IP such as `http://192.168.1.10`.
+
+- `ALLOWED_ORIGINS` is left **empty**, so the API reflects any origin (CORS is open).
+- HSTS is disabled, so plain HTTP is not force-upgraded to HTTPS.
+- `NODE_ENV` stays `development`, so the default `JWT_SECRET` is accepted.
+
+```bash
+cp .env.example .env
+npm run docker:up
+# Client: http://localhost:5173   API: http://localhost:4000/api
+```
+
+To reach it from other devices on your network, point the client at the host's
+LAN IP when building so the browser calls the right API address:
+
+```bash
+# In .env (consumed at client build time):
+VITE_API_URL=http://192.168.1.10:4000/api
+```
+
+Then open `http://192.168.1.10:5173` from any device on the LAN.
+
+> Note: PWA install/offline requires a **secure context** (HTTPS or
+> `localhost`). Over a raw LAN IP the app still runs, but it won't be
+> installable until served over HTTPS.
+
+### 2. Public / production deployment (HTTPS, locked down)
+
+For an internet-facing deployment, switch on the production safeguards. At a
+minimum set:
+
+```bash
+NODE_ENV=production                         # enables the JWT-secret guard
+JWT_SECRET=<long-random-string>             # REQUIRED — server won't start with the default
+ALLOWED_ORIGINS=https://todo.example.com    # comma-separated CORS allow-list
+TRUST_PROXY=true                            # when behind nginx/traefik/Caddy
+VITE_API_URL=https://todo.example.com/api   # API base URL the client calls
+ADMIN_EMAIL=you@example.com                 # change the default admin
+ADMIN_PASSWORD=<strong-password>
+```
+
+Generate a strong secret with:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+Key behaviors in production:
+
+- The server **refuses to start** if `NODE_ENV=production` and `JWT_SECRET` is
+  still the default dev value.
+- CORS only allows the origins listed in `ALLOWED_ORIGINS` (requests from other
+  origins are rejected).
+- Rate limiting applies per client IP — set `TRUST_PROXY=true` so the real
+  client IP is read from the proxy's `X-Forwarded-*` headers instead of the
+  proxy's own IP.
+
+#### Behind a reverse proxy (nginx example)
+
+Terminate TLS at the proxy and forward `/api` to the server and everything else
+to the client container. Forwarded headers must be passed through for rate
+limiting to work (`TRUST_PROXY=true`):
+
+```nginx
+server {
+  listen 443 ssl;
+  server_name todo.example.com;
+
+  # ...ssl_certificate / ssl_certificate_key...
+
+  location /api/ {
+    proxy_pass http://127.0.0.1:4000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  location / {
+    proxy_pass http://127.0.0.1:5173;   # nginx-served static client
+  }
+}
+```
+
+With this layout the client and API share one origin, so you can set
+`ALLOWED_ORIGINS=https://todo.example.com` and `VITE_API_URL=https://todo.example.com/api`.
+
+### 3. Quick public tunnel (ngrok)
+
+The Docker stack bundles an optional **ngrok** service to expose the client
+publicly without a server. Set `NGROK_AUTHTOKEN` in `.env`, bring the stack up,
+and read the public URL from the ngrok inspector at http://localhost:4040.
+Because ngrok terminates TLS, set `TRUST_PROXY=true` so rate limiting sees the
+real client IP, and add the ngrok URL to `ALLOWED_ORIGINS` if you lock CORS down.
+
+### Tuning rate limits
+
+Defaults are generous and shouldn't affect normal use. Adjust per IP via:
+
+| Variable               | Default      | Meaning                                   |
+| ---------------------- | ------------ | ----------------------------------------- |
+| `RATE_LIMIT_WINDOW_MS` | `900000`     | Window length in ms (15 min)              |
+| `RATE_LIMIT_MAX`       | `600`        | Max API requests per window               |
+| `RATE_LIMIT_AUTH_MAX`  | `30`         | Max sign-in/sign-up attempts per window   |
+
+### Data persistence & backups
+
+The SQLite database lives at `DATABASE_FILE` (default `/data/mtodo.sqlite` in
+Docker, on the named `mtodo-data` volume). Back it up by copying that file (or
+the volume). `npm run docker:down -v` **drops** the volume and all data, so omit
+`-v` for an ordinary stop.
+
 ## Progressive Web App (PWA)
 
 The client is a PWA powered by [`vite-plugin-pwa`](https://vite-pwa-org.netlify.app/):
@@ -174,14 +294,8 @@ zero-config for local / LAN development:
   if `JWT_SECRET` is still the default dev value.
 
 For a LAN-only deployment over HTTP, no extra configuration is needed. For a
-public deployment, set at minimum:
-
-```bash
-NODE_ENV=production
-JWT_SECRET=<long-random-string>
-ALLOWED_ORIGINS=https://your-domain.example
-TRUST_PROXY=true   # if behind nginx/traefik
-```
+public deployment, see the [Deployment](#deployment) section above for the full
+production setup (HTTPS, locked-down CORS, reverse proxy, rate-limit tuning).
 
 ## Telegram integration
 

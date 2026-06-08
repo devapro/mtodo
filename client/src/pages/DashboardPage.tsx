@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Container, Row, Col, Card, Button, ListGroup, Form, Alert, Spinner, InputGroup, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, ListGroup, Form, Alert, Spinner, InputGroup, Badge, Dropdown } from 'react-bootstrap';
 import { api } from '../api';
 import { List, Task, TaskInput } from '../types';
 import TaskCard from '../components/TaskCard';
 import TaskModal from '../components/TaskModal';
+import ShareModal from '../components/ShareModal';
+import { useAuth } from '../context/AuthContext';
+
+// Icon used in the sidebar to distinguish list ownership/sharing.
+const listIcon = (l: List): string => {
+  if (l.role === 'owner') return l.shared_count > 0 ? '🔗' : '📁';
+  return '👥'; // shared with me
+};
 
 type View = { kind: 'today' } | { kind: 'all' } | { kind: 'list'; id: number };
 
@@ -16,6 +24,7 @@ const todayStr = () => {
 };
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [lists, setLists] = useState<List[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
@@ -32,8 +41,19 @@ export default function DashboardPage() {
   const [quickTitle, setQuickTitle] = useState('');
   const [quickBusy, setQuickBusy] = useState(false);
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [shareList, setShareList] = useState<List | null>(null);
 
   const activeListId = view.kind === 'list' ? view.id : null;
+  const currentList = view.kind === 'list' ? lists.find((l) => l.id === view.id) : undefined;
+  // In a list view, whether the current user may add/modify tasks here.
+  const canEditCurrent = view.kind !== 'list' || !!currentList?.can_edit;
+
+  // Per-task edit permission (own task, or task in a list you can edit).
+  const canEditTask = (task: Task): boolean => {
+    if (user && task.user_id === user.id) return true;
+    const l = lists.find((x) => x.id === task.list_id);
+    return l ? l.can_edit : true;
+  };
 
   const loadTasks = useCallback(async () => {
     setError(null);
@@ -92,6 +112,14 @@ export default function DashboardPage() {
   const deleteList = async (list: List) => {
     if (!confirm(`Delete list "${list.name}"? Tasks will be kept without a list.`)) return;
     await api.deleteList(list.id);
+    setLists((prev) => prev.filter((l) => l.id !== list.id));
+    if (view.kind === 'list' && view.id === list.id) setView({ kind: 'today' });
+  };
+
+  const leaveList = async (list: List) => {
+    if (!user) return;
+    if (!confirm(`Leave shared list "${list.name}"? You'll lose access until re-invited.`)) return;
+    await api.leaveList(list.id, user.id);
     setLists((prev) => prev.filter((l) => l.id !== list.id));
     if (view.kind === 'list' && view.id === list.id) setView({ kind: 'today' });
   };
@@ -193,19 +221,21 @@ export default function DashboardPage() {
                     action
                     active={view.kind === 'list' && view.id === l.id}
                     onClick={() => changeView({ kind: 'list', id: l.id })}
-                    className="d-flex justify-content-between align-items-center"
+                    className="d-flex justify-content-between align-items-center gap-2"
                   >
-                    <span>📁 {l.name}</span>
-                    <span
-                      role="button"
-                      className="text-danger small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteList(l);
-                      }}
-                    >
-                      ✕
+                    <span className="text-truncate">
+                      {listIcon(l)} {l.name}
                     </span>
+                    {l.role !== 'owner' && !l.can_edit && (
+                      <Badge bg="secondary" className="tag-chip">
+                        read-only
+                      </Badge>
+                    )}
+                    {l.role === 'owner' && l.shared_count > 0 && (
+                      <Badge bg="info" className="tag-chip">
+                        shared
+                      </Badge>
+                    )}
                   </ListGroup.Item>
                 ))}
                 {lists.length === 0 && (
@@ -267,37 +297,94 @@ export default function DashboardPage() {
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <h3 className="mb-0">
               {heading}
+              {currentList && currentList.role !== 'owner' && (
+                <Badge
+                  bg={currentList.can_edit ? 'info' : 'secondary'}
+                  className="ms-2 align-middle"
+                >
+                  {currentList.can_edit ? 'shared · can edit' : 'shared · read-only'}
+                </Badge>
+              )}
               {activeTag && (
                 <Badge bg="primary" className="ms-2 align-middle">
                   #{activeTag}
                 </Badge>
               )}
             </h3>
+
+            {currentList && (
+              <Dropdown align="end">
+                <Dropdown.Toggle variant="outline-secondary" size="sm" id="list-actions">
+                  ⋯
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {currentList.role === 'owner' ? (
+                    <>
+                      <Dropdown.Item onClick={() => setShareList(currentList)}>
+                        👥 Share…
+                      </Dropdown.Item>
+                      {currentList.shared_count > 0 && (
+                        <Dropdown.Header className="small">
+                          Shared with {currentList.shared_count}{' '}
+                          {currentList.shared_count === 1 ? 'person' : 'people'}
+                        </Dropdown.Header>
+                      )}
+                      <Dropdown.Divider />
+                      <Dropdown.Item
+                        className="text-danger"
+                        onClick={() => deleteList(currentList)}
+                      >
+                        🗑️ Delete list
+                      </Dropdown.Item>
+                    </>
+                  ) : (
+                    <>
+                      <Dropdown.Header className="small">
+                        Owned by {currentList.owner_email}
+                      </Dropdown.Header>
+                      <Dropdown.Item
+                        className="text-danger"
+                        onClick={() => leaveList(currentList)}
+                      >
+                        🚪 Leave list
+                      </Dropdown.Item>
+                    </>
+                  )}
+                </Dropdown.Menu>
+              </Dropdown>
+            )}
           </div>
 
-          <InputGroup className="mb-3">
-            <Form.Control
-              placeholder="Quick add a task — type a title and press Enter"
-              value={quickTitle}
-              onChange={(e) => setQuickTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  quickAdd();
-                }
-              }}
-            />
-            <Button onClick={quickAdd} disabled={quickBusy || !quickTitle.trim()}>
-              {quickBusy ? 'Adding…' : 'Add'}
-            </Button>
-            <Button
-              variant="outline-secondary"
-              onClick={expandQuickAdd}
-              title="Open full form with more options"
-            >
-              More options
-            </Button>
-          </InputGroup>
+          {canEditCurrent ? (
+            <InputGroup className="mb-3">
+              <Form.Control
+                placeholder="Quick add a task — type a title and press Enter"
+                value={quickTitle}
+                onChange={(e) => setQuickTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    quickAdd();
+                  }
+                }}
+              />
+              <Button onClick={quickAdd} disabled={quickBusy || !quickTitle.trim()}>
+                {quickBusy ? 'Adding…' : 'Add'}
+              </Button>
+              <Button
+                variant="outline-secondary"
+                onClick={expandQuickAdd}
+                title="Open full form with more options"
+              >
+                More options
+              </Button>
+            </InputGroup>
+          ) : (
+            <Alert variant="secondary" className="py-2 mb-3 small">
+              🔒 This list is shared with you as read-only. Only the owner and editors can
+              make changes.
+            </Alert>
+          )}
 
           <div className="d-flex gap-2 mb-3 flex-wrap align-items-center">
             <Form.Control
@@ -327,6 +414,7 @@ export default function DashboardPage() {
                 key={task.id}
                 task={task}
                 lists={lists}
+                canEdit={canEditTask(task)}
                 onToggle={toggleTask}
                 onEdit={openEdit}
                 onDelete={deleteTask}
@@ -339,13 +427,20 @@ export default function DashboardPage() {
       <TaskModal
         show={showModal}
         task={editing}
-        lists={lists}
+        lists={lists.filter((l) => l.can_edit)}
         tagSuggestions={tagSuggestions}
         defaultDate={view.kind === 'today' ? todayStr() : null}
         defaultListId={activeListId}
         defaultTitle={prefillTitle}
         onClose={() => setShowModal(false)}
         onSave={saveTask}
+      />
+
+      <ShareModal
+        show={!!shareList}
+        list={shareList}
+        onClose={() => setShareList(null)}
+        onChanged={loadMeta}
       />
     </Container>
   );

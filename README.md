@@ -12,6 +12,7 @@ A simple, modern TODO Proof of Concept built with a TypeScript stack.
 - 🛡️ **Admin panel** – list & remove users. Admin credentials come from `.env`.
 - ✅ **Tasks** – create, edit, complete, delete.
 - 🗂️ **Lists** – organize tasks into TODO lists.
+- 🤝 **Sharing** – share a list with another user by email, as **read-only** (only the owner/editors can change tasks) or **can edit**. Shared lists appear in the sidebar with a distinct icon (👥) and a read-only badge; owners get a 🔗 "shared" indicator. Manage members (change permission / remove) from the list's **⋯** menu, where owners can also delete and members can leave.
 - 🏷️ **Tags** – autocomplete from existing tags or type a new one to create it on the fly.
 - 🔁 **Repeats** – none / daily / weekly (pick weekdays) / monthly (pick days) / custom (every N days/weeks/months).
 - 📅 **Dates** – assign a specific date to a task.
@@ -102,8 +103,11 @@ See [`.env.example`](./.env.example):
 | POST   | `/api/auth/signup`      | Create account             |
 | POST   | `/api/auth/signin`      | Log in                     |
 | GET    | `/api/auth/me`          | Current user               |
-| GET    | `/api/lists`            | List TODO lists            |
+| GET    | `/api/lists`            | List owned + shared lists  |
 | POST   | `/api/lists`            | Create list                |
+| GET    | `/api/lists/:id/shares` | List members (owner only)  |
+| POST   | `/api/lists/:id/shares` | Share with a user by email |
+| DELETE | `/api/lists/:id/shares/:userId` | Revoke / leave a share |
 | GET    | `/api/tags`             | List tags                  |
 | GET    | `/api/tasks?today=true` | Today's tasks              |
 | POST   | `/api/tasks`            | Create task                |

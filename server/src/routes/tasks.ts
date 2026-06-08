@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prepare as db_prepare } from '../db';
 const db = { prepare: db_prepare };
 import { authRequired } from '../auth';
+import { accessibleListIds, canEditList, getListAccess } from '../access';
 import { TaskRow, TagRow, RepeatType } from '../types';
 
 const router = Router();
@@ -68,6 +69,20 @@ function parseRepeatDays(value: unknown): number[] | null {
   return null;
 }
 
+/** Can the user see this task? (their own, or in a list they can access) */
+function canViewTask(userId: number, task: TaskRow): boolean {
+  if (task.user_id === userId) return true;
+  if (task.list_id != null && getListAccess(userId, task.list_id) !== null) return true;
+  return false;
+}
+
+/** Can the user modify this task? (their own, or in a list they can edit) */
+function canModifyTask(userId: number, task: TaskRow): boolean {
+  if (task.user_id === userId) return true;
+  if (task.list_id != null && canEditList(userId, task.list_id)) return true;
+  return false;
+}
+
 /** Does a recurring/dated task occur on the given YYYY-MM-DD date? */
 function occursOnDate(row: TaskRow, dateStr: string): boolean {
   const date = new Date(dateStr + 'T00:00:00');
@@ -119,9 +134,23 @@ router.get('/', (req, res) => {
   const userId = req.user!.id;
   const { listId, date, today } = req.query;
 
-  let rows = db
-    .prepare('SELECT * FROM tasks WHERE user_id = ? ORDER BY created_at DESC')
-    .all(userId) as TaskRow[];
+  // The user can see their own tasks plus any task in a list shared with them.
+  const accessible = accessibleListIds(userId);
+  let rows: TaskRow[];
+  if (accessible.length) {
+    const placeholders = accessible.map(() => '?').join(',');
+    rows = db
+      .prepare(
+        `SELECT * FROM tasks
+         WHERE user_id = ? OR list_id IN (${placeholders})
+         ORDER BY created_at DESC`
+      )
+      .all(userId, ...accessible) as TaskRow[];
+  } else {
+    rows = db
+      .prepare('SELECT * FROM tasks WHERE user_id = ? ORDER BY created_at DESC')
+      .all(userId) as TaskRow[];
+  }
 
   if (listId !== undefined && listId !== '') {
     rows = rows.filter((r) => r.list_id === Number(listId));
@@ -138,9 +167,11 @@ router.get('/', (req, res) => {
 
 router.get('/:id', (req, res) => {
   const row = db
-    .prepare('SELECT * FROM tasks WHERE id = ? AND user_id = ?')
-    .get(Number(req.params.id), req.user!.id) as TaskRow | undefined;
-  if (!row) return res.status(404).json({ error: 'Task not found' });
+    .prepare('SELECT * FROM tasks WHERE id = ?')
+    .get(Number(req.params.id)) as TaskRow | undefined;
+  if (!row || !canViewTask(req.user!.id, row)) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
   res.json(serialize(row));
 });
 
@@ -149,6 +180,15 @@ router.post('/', (req, res) => {
   const b = req.body || {};
   const title = String(b.title || '').trim();
   if (!title) return res.status(400).json({ error: 'Task title is required' });
+
+  // If the task targets a list, the user must be allowed to edit that list.
+  if (b.list_id) {
+    const access = getListAccess(userId, Number(b.list_id));
+    if (access === null) return res.status(404).json({ error: 'List not found' });
+    if (access === 'viewer') {
+      return res.status(403).json({ error: 'This list is read-only' });
+    }
+  }
 
   const repeatType: RepeatType = REPEAT_TYPES.includes(b.repeat_type)
     ? b.repeat_type
@@ -183,14 +223,26 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   const userId = req.user!.id;
   const id = Number(req.params.id);
-  const existing = db
-    .prepare('SELECT * FROM tasks WHERE id = ? AND user_id = ?')
-    .get(id, userId) as TaskRow | undefined;
-  if (!existing) return res.status(404).json({ error: 'Task not found' });
+  const existing = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as
+    | TaskRow
+    | undefined;
+  if (!existing || !canViewTask(userId, existing)) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+  if (!canModifyTask(userId, existing)) {
+    return res.status(403).json({ error: 'You do not have permission to edit this task' });
+  }
 
   const b = req.body || {};
   const title = b.title !== undefined ? String(b.title).trim() : existing.title;
   if (!title) return res.status(400).json({ error: 'Task title is required' });
+
+  // If moving the task to a different list, ensure the user can edit that list.
+  if (b.list_id !== undefined && b.list_id) {
+    const access = getListAccess(userId, Number(b.list_id));
+    if (access === null) return res.status(404).json({ error: 'List not found' });
+    if (access === 'viewer') return res.status(403).json({ error: 'This list is read-only' });
+  }
 
   const repeatType: RepeatType =
     b.repeat_type !== undefined && REPEAT_TYPES.includes(b.repeat_type)
@@ -226,10 +278,15 @@ router.put('/:id', (req, res) => {
 
 router.patch('/:id/toggle', (req, res) => {
   const id = Number(req.params.id);
-  const existing = db
-    .prepare('SELECT * FROM tasks WHERE id = ? AND user_id = ?')
-    .get(id, req.user!.id) as TaskRow | undefined;
-  if (!existing) return res.status(404).json({ error: 'Task not found' });
+  const existing = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as
+    | TaskRow
+    | undefined;
+  if (!existing || !canViewTask(req.user!.id, existing)) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+  if (!canModifyTask(req.user!.id, existing)) {
+    return res.status(403).json({ error: 'You do not have permission to edit this task' });
+  }
   db.prepare("UPDATE tasks SET completed = ?, updated_at = datetime('now') WHERE id = ?").run(
     existing.completed ? 0 : 1,
     id
@@ -239,10 +296,17 @@ router.patch('/:id/toggle', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
-  const info = db
-    .prepare('DELETE FROM tasks WHERE id = ? AND user_id = ?')
-    .run(Number(req.params.id), req.user!.id);
-  if (Number(info.changes) === 0) return res.status(404).json({ error: 'Task not found' });
+  const id = Number(req.params.id);
+  const existing = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as
+    | TaskRow
+    | undefined;
+  if (!existing || !canViewTask(req.user!.id, existing)) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+  if (!canModifyTask(req.user!.id, existing)) {
+    return res.status(403).json({ error: 'You do not have permission to delete this task' });
+  }
+  db.prepare('DELETE FROM tasks WHERE id = ?').run(id);
   res.status(204).end();
 });
 

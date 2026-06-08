@@ -23,6 +23,34 @@ export interface ListRow {
   created_at: string;
 }
 
+export type ListRole = 'owner' | 'editor' | 'viewer';
+
+export interface ListShareRow {
+  list_id: number;
+  user_id: number;
+  can_edit: number; // 0 | 1
+  created_at: string;
+}
+
+export interface ListDTO {
+  id: number;
+  user_id: number; // owner id (kept for backwards compatibility with the client)
+  name: string;
+  color: string | null;
+  created_at: string;
+  owner_id: number;
+  owner_email: string;
+  role: ListRole;
+  can_edit: boolean;
+  shared_count: number;
+}
+
+export interface ListShareDTO {
+  user_id: number;
+  email: string;
+  can_edit: boolean;
+}
+
 export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly' | 'custom';
 
 export interface TaskRow {

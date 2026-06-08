@@ -8,6 +8,7 @@ import { List, Task } from '../types';
 interface Props {
   task: Task;
   lists: List[];
+  canEdit?: boolean;
   onToggle: (task: Task) => void;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
@@ -28,7 +29,14 @@ function repeatLabel(task: Task): string | null {
   }
 }
 
-export default function TaskCard({ task, lists, onToggle, onEdit, onDelete }: Props) {
+export default function TaskCard({
+  task,
+  lists,
+  canEdit = true,
+  onToggle,
+  onEdit,
+  onDelete,
+}: Props) {
   const [open, setOpen] = useState(false);
   const list = lists.find((l) => l.id === task.list_id);
   const repeat = repeatLabel(task);
@@ -41,6 +49,7 @@ export default function TaskCard({ task, lists, onToggle, onEdit, onDelete }: Pr
             type="checkbox"
             className="mt-1"
             checked={task.completed}
+            disabled={!canEdit}
             onChange={() => onToggle(task)}
           />
           <div className="flex-grow-1">
@@ -58,24 +67,28 @@ export default function TaskCard({ task, lists, onToggle, onEdit, onDelete }: Pr
                     {open ? '▲' : '▼'}
                   </Button>
                 )}
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 text-decoration-none"
-                  onClick={() => onEdit(task)}
-                  title="Edit"
-                >
-                  ✏️
-                </Button>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 text-decoration-none text-danger"
-                  onClick={() => onDelete(task)}
-                  title="Delete"
-                >
-                  🗑️
-                </Button>
+                {canEdit && (
+                  <>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="p-0 text-decoration-none"
+                      onClick={() => onEdit(task)}
+                      title="Edit"
+                    >
+                      ✏️
+                    </Button>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="p-0 text-decoration-none text-danger"
+                      onClick={() => onDelete(task)}
+                      title="Delete"
+                    >
+                      🗑️
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 

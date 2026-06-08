@@ -1,4 +1,4 @@
-import { AdminUser, List, Tag, Task, TaskInput, User } from './types';
+import { AdminUser, List, ListShare, Tag, Task, TaskInput, User } from './types';
 
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:4000/api';
 
@@ -56,6 +56,18 @@ export const api = {
   updateList: (id: number, body: Partial<{ name: string; color: string | null }>) =>
     request<List>(`/lists/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   deleteList: (id: number) => request<void>(`/lists/${id}`, { method: 'DELETE' }),
+
+  // list sharing
+  getShares: (listId: number) => request<ListShare[]>(`/lists/${listId}/shares`),
+  shareList: (listId: number, email: string, canEdit: boolean) =>
+    request<ListShare[]>(`/lists/${listId}/shares`, {
+      method: 'POST',
+      body: JSON.stringify({ email, can_edit: canEdit }),
+    }),
+  removeShare: (listId: number, userId: number) =>
+    request<void>(`/lists/${listId}/shares/${userId}`, { method: 'DELETE' }),
+  leaveList: (listId: number, myUserId: number) =>
+    request<void>(`/lists/${listId}/shares/${myUserId}`, { method: 'DELETE' }),
 
   // tags
   getTags: () => request<Tag[]>('/tags'),

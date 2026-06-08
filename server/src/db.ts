@@ -93,9 +93,21 @@ export function initDb(): void {
       FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS list_shares (
+      list_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      can_edit INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (list_id, user_id),
+      FOREIGN KEY (list_id) REFERENCES lists(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(user_id);
     CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks(due_date);
+    CREATE INDEX IF NOT EXISTS idx_tasks_list ON tasks(list_id);
     CREATE INDEX IF NOT EXISTS idx_lists_user ON lists(user_id);
+    CREATE INDEX IF NOT EXISTS idx_list_shares_user ON list_shares(user_id);
   `);
 
   seedAdmin();

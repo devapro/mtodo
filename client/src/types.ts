@@ -11,12 +11,25 @@ export interface AdminUser extends User {
   task_count: number;
 }
 
+export type ListRole = 'owner' | 'editor' | 'viewer';
+
 export interface List {
   id: number;
   user_id: number;
   name: string;
   color: string | null;
   created_at: string;
+  owner_id: number;
+  owner_email: string;
+  role: ListRole;
+  can_edit: boolean;
+  shared_count: number;
+}
+
+export interface ListShare {
+  user_id: number;
+  email: string;
+  can_edit: boolean;
 }
 
 export interface Tag {

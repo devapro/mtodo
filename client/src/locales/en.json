@@ -24,7 +24,16 @@
     "toggleTheme": "Toggle theme",
     "light": "☀️ Light",
     "dark": "🌙 Dark",
-    "adminBadge": "admin"
+    "adminBadge": "admin",
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "language": "Language",
+    "theme": "Theme",
+    "account": "Account",
+    "signedInAs": "Signed in as"
   },
   "auth": {
     "welcomeBack": "Welcome back",
@@ -39,6 +48,7 @@
     "haveAccount": "Already have an account? Sign in"
   },
   "dashboard": {
+    "menu": "Menu",
     "today": "⭐ Today",
     "allTasks": "📋 All tasks",
     "headingToday": "Today · {{date}}",

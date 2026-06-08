@@ -1,22 +1,11 @@
-import { Navbar, Container, Nav, Button, Badge, Dropdown } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
+import { Navbar, Container, Nav } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { SUPPORTED_LANGUAGES } from '../i18n';
 
 export default function NavBar() {
-  const { user, signout } = useAuth();
-  const { theme, toggle } = useTheme();
-  const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
-
-  const handleSignout = () => {
-    signout();
-    navigate('/login');
-  };
-
-  const currentLang = (i18n.resolvedLanguage || i18n.language || 'en').slice(0, 2);
+  const { user } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <Navbar expand="md" className="border-bottom mb-4" bg="body-tertiary">
@@ -36,42 +25,17 @@ export default function NavBar() {
               </Nav.Link>
             )}
           </Nav>
-          <div className="d-flex align-items-center gap-3">
-            <Dropdown align="end">
-              <Dropdown.Toggle variant="outline-secondary" size="sm" id="lang-switcher">
-                {t(`language.${currentLang}`)}
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                {SUPPORTED_LANGUAGES.map((lng) => (
-                  <Dropdown.Item
-                    key={lng}
-                    active={currentLang === lng}
-                    onClick={() => i18n.changeLanguage(lng)}
-                  >
-                    {t(`language.${lng}`)}
-                  </Dropdown.Item>
-                ))}
-              </Dropdown.Menu>
-            </Dropdown>
-            <Button
-              variant="outline-secondary"
-              size="sm"
-              onClick={toggle}
-              title={t('nav.toggleTheme')}
+          <div className="d-flex align-items-center">
+            <Link
+              to="/settings"
+              className="btn btn-outline-secondary btn-sm d-flex align-items-center"
+              title={t('nav.settings')}
+              aria-label={t('nav.settings')}
             >
-              {theme === 'dark' ? t('nav.light') : t('nav.dark')}
-            </Button>
-            <span className="text-secondary small d-none d-sm-inline">
-              {user?.email}
-              {user?.role === 'admin' && (
-                <Badge bg="primary" className="ms-2">
-                  {t('nav.adminBadge')}
-                </Badge>
-              )}
-            </span>
-            <Button variant="outline-danger" size="sm" onClick={handleSignout}>
-              {t('nav.signOut')}
-            </Button>
+              <span aria-hidden style={{ fontSize: '1.1rem', lineHeight: 1 }}>
+                ⚙️
+              </span>
+            </Link>
           </div>
         </Navbar.Collapse>
       </Container>

@@ -24,7 +24,16 @@
     "toggleTheme": "Сменить тему",
     "light": "☀️ Светлая",
     "dark": "🌙 Тёмная",
-    "adminBadge": "админ"
+    "adminBadge": "админ",
+    "settings": "Настройки"
+  },
+  "settings": {
+    "title": "Настройки",
+    "appearance": "Оформление",
+    "language": "Язык",
+    "theme": "Тема",
+    "account": "Аккаунт",
+    "signedInAs": "Вы вошли как"
   },
   "auth": {
     "welcomeBack": "С возвращением",
@@ -39,6 +48,7 @@
     "haveAccount": "Уже есть аккаунт? Войдите"
   },
   "dashboard": {
+    "menu": "Меню",
     "today": "⭐ Сегодня",
     "allTasks": "📋 Все задачи",
     "headingToday": "Сегодня · {{date}}",

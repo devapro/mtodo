@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Container, Row, Col, Card, Button, ListGroup, Form, Alert, Spinner, InputGroup, Badge, Dropdown } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, ListGroup, Form, Alert, Spinner, InputGroup, Badge, Dropdown, Offcanvas } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { List, Task, TaskInput } from '../types';
@@ -44,6 +44,7 @@ export default function DashboardPage() {
   const [quickBusy, setQuickBusy] = useState(false);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [shareList, setShareList] = useState<List | null>(null);
+  const [showSidebar, setShowSidebar] = useState(false);
 
   const activeListId = view.kind === 'list' ? view.id : null;
   const currentList = view.kind === 'list' ? lists.find((l) => l.id === view.id) : undefined;
@@ -145,6 +146,7 @@ export default function DashboardPage() {
   const changeView = (next: View) => {
     setActiveTag(null);
     setView(next);
+    setShowSidebar(false);
   };
 
   const filtered = useMemo(() => {
@@ -190,115 +192,137 @@ export default function DashboardPage() {
     );
   }
 
+  const sidebarContent = (
+    <>
+      <Card className="mb-3">
+        <ListGroup variant="flush">
+          <ListGroup.Item
+            action
+            active={view.kind === 'today'}
+            onClick={() => changeView({ kind: 'today' })}
+          >
+            {t('dashboard.today')}
+          </ListGroup.Item>
+          <ListGroup.Item
+            action
+            active={view.kind === 'all'}
+            onClick={() => changeView({ kind: 'all' })}
+          >
+            {t('dashboard.allTasks')}
+          </ListGroup.Item>
+        </ListGroup>
+      </Card>
+
+      <Card className="mb-3">
+        <Card.Header className="fw-semibold">{t('dashboard.lists')}</Card.Header>
+        <ListGroup variant="flush">
+          {lists.map((l) => (
+            <ListGroup.Item
+              key={l.id}
+              action
+              active={view.kind === 'list' && view.id === l.id}
+              onClick={() => changeView({ kind: 'list', id: l.id })}
+              className="d-flex justify-content-between align-items-center gap-2"
+            >
+              <span className="text-truncate">
+                {listIcon(l)} {l.name}
+              </span>
+              {l.role !== 'owner' && !l.can_edit && (
+                <Badge bg="secondary" className="tag-chip">
+                  {t('dashboard.readOnly')}
+                </Badge>
+              )}
+              {l.role === 'owner' && l.shared_count > 0 && (
+                <Badge bg="info" className="tag-chip">
+                  {t('dashboard.shared')}
+                </Badge>
+              )}
+            </ListGroup.Item>
+          ))}
+          {lists.length === 0 && (
+            <ListGroup.Item className="text-secondary small">
+              {t('dashboard.noLists')}
+            </ListGroup.Item>
+          )}
+        </ListGroup>
+        <Card.Body>
+          <InputGroup size="sm">
+            <Form.Control
+              placeholder={t('dashboard.newListPlaceholder')}
+              value={newListName}
+              onChange={(e) => setNewListName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addList()}
+            />
+            <Button variant="outline-primary" onClick={addList}>
+              {t('common.add')}
+            </Button>
+          </InputGroup>
+        </Card.Body>
+      </Card>
+
+      <Card>
+        <Card.Header className="fw-semibold d-flex justify-content-between align-items-center">
+          <span>{t('dashboard.tags')}</span>
+          {activeTag && (
+            <Button
+              variant="link"
+              size="sm"
+              className="p-0 text-decoration-none"
+              onClick={() => setActiveTag(null)}
+            >
+              {t('common.clear')}
+            </Button>
+          )}
+        </Card.Header>
+        <Card.Body className="d-flex flex-wrap gap-1">
+          {tagSuggestions.length === 0 && (
+            <span className="text-secondary small">{t('dashboard.noTags')}</span>
+          )}
+          {tagSuggestions.map((tag) => (
+            <Badge
+              key={tag}
+              bg={activeTag === tag ? 'primary' : 'secondary'}
+              className="tag-chip"
+              role="button"
+              onClick={() => setActiveTag((cur) => (cur === tag ? null : tag))}
+            >
+              #{tag}
+            </Badge>
+          ))}
+        </Card.Body>
+      </Card>
+    </>
+  );
+
   return (
     <Container className="pb-5">
       <Row>
-        <Col lg={3} className="mb-4">
-          <div className="sidebar">
-            <Card className="mb-3">
-              <ListGroup variant="flush">
-                <ListGroup.Item
-                  action
-                  active={view.kind === 'today'}
-                  onClick={() => changeView({ kind: 'today' })}
-                >
-                  {t('dashboard.today')}
-                </ListGroup.Item>
-                <ListGroup.Item
-                  action
-                  active={view.kind === 'all'}
-                  onClick={() => changeView({ kind: 'all' })}
-                >
-                  {t('dashboard.allTasks')}
-                </ListGroup.Item>
-              </ListGroup>
-            </Card>
-
-            <Card className="mb-3">
-              <Card.Header className="fw-semibold">{t('dashboard.lists')}</Card.Header>
-              <ListGroup variant="flush">
-                {lists.map((l) => (
-                  <ListGroup.Item
-                    key={l.id}
-                    action
-                    active={view.kind === 'list' && view.id === l.id}
-                    onClick={() => changeView({ kind: 'list', id: l.id })}
-                    className="d-flex justify-content-between align-items-center gap-2"
-                  >
-                    <span className="text-truncate">
-                      {listIcon(l)} {l.name}
-                    </span>
-                    {l.role !== 'owner' && !l.can_edit && (
-                      <Badge bg="secondary" className="tag-chip">
-                        {t('dashboard.readOnly')}
-                      </Badge>
-                    )}
-                    {l.role === 'owner' && l.shared_count > 0 && (
-                      <Badge bg="info" className="tag-chip">
-                        {t('dashboard.shared')}
-                      </Badge>
-                    )}
-                  </ListGroup.Item>
-                ))}
-                {lists.length === 0 && (
-                  <ListGroup.Item className="text-secondary small">
-                    {t('dashboard.noLists')}
-                  </ListGroup.Item>
-                )}
-              </ListGroup>
-              <Card.Body>
-                <InputGroup size="sm">
-                  <Form.Control
-                    placeholder={t('dashboard.newListPlaceholder')}
-                    value={newListName}
-                    onChange={(e) => setNewListName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && addList()}
-                  />
-                  <Button variant="outline-primary" onClick={addList}>
-                    {t('common.add')}
-                  </Button>
-                </InputGroup>
-              </Card.Body>
-            </Card>
-
-            <Card>
-              <Card.Header className="fw-semibold d-flex justify-content-between align-items-center">
-                <span>{t('dashboard.tags')}</span>
-                {activeTag && (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="p-0 text-decoration-none"
-                    onClick={() => setActiveTag(null)}
-                  >
-                    {t('common.clear')}
-                  </Button>
-                )}
-              </Card.Header>
-              <Card.Body className="d-flex flex-wrap gap-1">
-                {tagSuggestions.length === 0 && (
-                  <span className="text-secondary small">{t('dashboard.noTags')}</span>
-                )}
-                {tagSuggestions.map((t) => (
-                  <Badge
-                    key={t}
-                    bg={activeTag === t ? 'primary' : 'secondary'}
-                    className="tag-chip"
-                    role="button"
-                    onClick={() => setActiveTag((cur) => (cur === t ? null : t))}
-                  >
-                    #{t}
-                  </Badge>
-                ))}
-              </Card.Body>
-            </Card>
-          </div>
+        <Col lg={3} className="mb-4 d-none d-lg-block">
+          <div className="sidebar">{sidebarContent}</div>
         </Col>
+
+        <Offcanvas show={showSidebar} onHide={() => setShowSidebar(false)}>
+          <Offcanvas.Header closeButton>
+            <Offcanvas.Title>{t('dashboard.menu')}</Offcanvas.Title>
+          </Offcanvas.Header>
+          <Offcanvas.Body>{sidebarContent}</Offcanvas.Body>
+        </Offcanvas>
 
         <Col lg={9}>
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-            <h3 className="mb-0">
-              {heading}
+            <div className="d-flex align-items-center gap-2">
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                className="d-lg-none"
+                onClick={() => setShowSidebar(true)}
+                aria-label={t('dashboard.menu')}
+                title={t('dashboard.menu')}
+              >
+                ☰
+              </Button>
+              <h3 className="mb-0">
+                {heading}
               {currentList && currentList.role !== 'owner' && (
                 <Badge
                   bg={currentList.can_edit ? 'info' : 'secondary'}
@@ -314,7 +338,8 @@ export default function DashboardPage() {
                   #{activeTag}
                 </Badge>
               )}
-            </h3>
+              </h3>
+            </div>
 
             {currentList && (
               <Dropdown align="end">

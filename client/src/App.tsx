@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import AdminPage from './pages/AdminPage';
+import SettingsPage from './pages/SettingsPage';
 import NavBar from './components/NavBar';
 import { ReactNode } from 'react';
 
@@ -45,6 +46,14 @@ export default function App() {
           element={
             <Protected adminOnly>
               <AdminPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <Protected>
+              <SettingsPage />
             </Protected>
           }
         />

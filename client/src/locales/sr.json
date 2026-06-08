@@ -24,7 +24,16 @@
     "toggleTheme": "Промени тему",
     "light": "☀️ Светла",
     "dark": "🌙 Тамна",
-    "adminBadge": "админ"
+    "adminBadge": "админ",
+    "settings": "Подешавања"
+  },
+  "settings": {
+    "title": "Подешавања",
+    "appearance": "Изглед",
+    "language": "Језик",
+    "theme": "Тема",
+    "account": "Налог",
+    "signedInAs": "Пријављени сте као"
   },
   "auth": {
     "welcomeBack": "Добро дошли назад",
@@ -39,6 +48,7 @@
     "haveAccount": "Већ имате налог? Пријавите се"
   },
   "dashboard": {
+    "menu": "Мени",
     "today": "⭐ Данас",
     "allTasks": "📋 Сви задаци",
     "headingToday": "Данас · {{date}}",

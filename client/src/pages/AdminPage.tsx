@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Container, Table, Card, Badge, Button, Alert, Spinner } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { AdminUser } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 export default function AdminPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +24,7 @@ export default function AdminPage() {
   useEffect(load, []);
 
   const remove = async (u: AdminUser) => {
-    if (!confirm(`Delete user ${u.email}? All their data will be removed.`)) return;
+    if (!confirm(t('admin.confirmDelete', { email: u.email }))) return;
     try {
       await api.deleteUser(u.id);
       setUsers((prev) => prev.filter((x) => x.id !== u.id));
@@ -33,7 +35,7 @@ export default function AdminPage() {
 
   return (
     <Container className="pb-5">
-      <h3 className="mb-3">Admin · Users</h3>
+      <h3 className="mb-3">{t('admin.title')}</h3>
       {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
       <Card>
         <Card.Body>
@@ -45,12 +47,12 @@ export default function AdminPage() {
             <Table responsive hover className="align-middle mb-0">
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Tasks</th>
-                  <th>Joined</th>
-                  <th className="text-end">Actions</th>
+                  <th>{t('admin.id')}</th>
+                  <th>{t('admin.email')}</th>
+                  <th>{t('admin.role')}</th>
+                  <th>{t('admin.tasks')}</th>
+                  <th>{t('admin.joined')}</th>
+                  <th className="text-end">{t('admin.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -70,7 +72,7 @@ export default function AdminPage() {
                         disabled={u.id === user?.id}
                         onClick={() => remove(u)}
                       >
-                        Delete
+                        {t('admin.delete')}
                       </Button>
                     </td>
                   </tr>

@@ -3,6 +3,8 @@ import { Card, Form, Badge, Button, Collapse } from 'react-bootstrap';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { List, Task } from '../types';
 
 interface Props {
@@ -14,16 +16,26 @@ interface Props {
   onDelete: (task: Task) => void;
 }
 
-function repeatLabel(task: Task): string | null {
+function repeatLabel(task: Task, t: TFunction): string | null {
   switch (task.repeat_type) {
     case 'daily':
-      return 'Daily';
+      return t('taskCard.daily');
     case 'weekly':
-      return 'Weekly';
+      return t('taskCard.weekly');
     case 'monthly':
-      return 'Monthly';
-    case 'custom':
-      return `Every ${task.repeat_interval || 1} ${task.repeat_unit || 'day'}(s)`;
+      return t('taskCard.monthly');
+    case 'custom': {
+      const unitKey =
+        task.repeat_unit === 'week'
+          ? 'taskModal.unitWeek'
+          : task.repeat_unit === 'month'
+            ? 'taskModal.unitMonth'
+            : 'taskModal.unitDay';
+      return t('taskCard.customEvery', {
+        interval: task.repeat_interval || 1,
+        unit: t(unitKey),
+      });
+    }
     default:
       return null;
   }
@@ -37,9 +49,10 @@ export default function TaskCard({
   onEdit,
   onDelete,
 }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const list = lists.find((l) => l.id === task.list_id);
-  const repeat = repeatLabel(task);
+  const repeat = repeatLabel(task, t);
 
   return (
     <Card className={`task-card mb-2 ${task.completed ? 'done' : ''}`}>
@@ -62,7 +75,7 @@ export default function TaskCard({
                     size="sm"
                     className="p-0 text-decoration-none"
                     onClick={() => setOpen((o) => !o)}
-                    title="Toggle description"
+                    title={t('taskCard.toggleDescription')}
                   >
                     {open ? '▲' : '▼'}
                   </Button>
@@ -74,7 +87,7 @@ export default function TaskCard({
                       size="sm"
                       className="p-0 text-decoration-none"
                       onClick={() => onEdit(task)}
-                      title="Edit"
+                      title={t('taskCard.edit')}
                     >
                       ✏️
                     </Button>
@@ -83,7 +96,7 @@ export default function TaskCard({
                       size="sm"
                       className="p-0 text-decoration-none text-danger"
                       onClick={() => onDelete(task)}
-                      title="Delete"
+                      title={t('taskCard.delete')}
                     >
                       🗑️
                     </Button>

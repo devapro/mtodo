@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Modal, Form, Button, Row, Col, Collapse } from 'react-bootstrap';
 import MDEditor from '@uiw/react-md-editor';
 import rehypeSanitize from 'rehype-sanitize';
+import { useTranslation } from 'react-i18next';
 import TagInput from './TagInput';
 import { List, RepeatType, RepeatUnit, Task, TaskInput } from '../types';
 import { useTheme } from '../context/ThemeContext';
@@ -18,7 +19,7 @@ interface Props {
   onSave: (input: TaskInput, id?: number) => Promise<void>;
 }
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
 export default function TaskModal({
   show,
@@ -32,6 +33,7 @@ export default function TaskModal({
   onSave,
 }: Props) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState<string>('');
   const [listId, setListId] = useState<string>('');
@@ -121,16 +123,16 @@ export default function TaskModal({
   return (
     <Modal show={show} onHide={onClose} size="lg" scrollable>
       <Modal.Header closeButton>
-        <Modal.Title>{task ? 'Edit task' : 'New task'}</Modal.Title>
+        <Modal.Title>{task ? t('taskModal.editTask') : t('taskModal.newTask')}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form>
           <Form.Group className="mb-3">
-            <Form.Label>Title</Form.Label>
+            <Form.Label>{t('taskModal.title')}</Form.Label>
             <Form.Control
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="What needs to be done?"
+              placeholder={t('taskModal.titlePlaceholder')}
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -142,7 +144,7 @@ export default function TaskModal({
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label>Tags</Form.Label>
+            <Form.Label>{t('taskModal.tags')}</Form.Label>
             <TagInput value={tags} suggestions={tagSuggestions} onChange={setTags} />
           </Form.Group>
 
@@ -154,7 +156,7 @@ export default function TaskModal({
               aria-expanded={advancedOpen}
               onClick={() => setAdvancedOpen((o) => !o)}
             >
-              {advancedOpen ? '▲' : '▼'} Date, list, repeat & description (optional)
+              {advancedOpen ? '▲' : '▼'} {t('taskModal.advancedToggle')}
             </Button>
           </div>
 
@@ -163,9 +165,9 @@ export default function TaskModal({
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
-                    <Form.Label>List</Form.Label>
+                    <Form.Label>{t('taskModal.list')}</Form.Label>
                     <Form.Select value={listId} onChange={(e) => setListId(e.target.value)}>
-                      <option value="">No list</option>
+                      <option value="">{t('taskModal.noList')}</option>
                       {lists.map((l) => (
                         <option key={l.id} value={l.id}>
                           {l.name}
@@ -176,7 +178,7 @@ export default function TaskModal({
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3">
-                    <Form.Label>Date</Form.Label>
+                    <Form.Label>{t('taskModal.date')}</Form.Label>
                     <Form.Control
                       type="date"
                       value={dueDate}
@@ -187,55 +189,55 @@ export default function TaskModal({
               </Row>
 
               <Form.Group className="mb-3">
-                <Form.Label>Repeat</Form.Label>
+                <Form.Label>{t('taskModal.repeat')}</Form.Label>
                 <Form.Select
                   value={repeatType}
                   onChange={(e) => setRepeatType(e.target.value as RepeatType)}
                 >
-                  <option value="none">Does not repeat</option>
-                  <option value="daily">Every day</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="custom">Custom</option>
+                  <option value="none">{t('taskModal.repeatNone')}</option>
+                  <option value="daily">{t('taskModal.repeatDaily')}</option>
+                  <option value="weekly">{t('taskModal.repeatWeekly')}</option>
+                  <option value="monthly">{t('taskModal.repeatMonthly')}</option>
+                  <option value="custom">{t('taskModal.repeatCustom')}</option>
                 </Form.Select>
               </Form.Group>
 
               {repeatType === 'weekly' && (
                 <Form.Group className="mb-3">
-                  <Form.Label>Repeat on</Form.Label>
+                  <Form.Label>{t('taskModal.repeatOn')}</Form.Label>
                   <div className="d-flex flex-wrap gap-2">
-                    {WEEKDAYS.map((label, idx) => (
+                    {WEEKDAY_KEYS.map((key, idx) => (
                       <Button
-                        key={label}
+                        key={key}
                         type="button"
                         size="sm"
                         variant={weekdays.includes(idx) ? 'primary' : 'outline-secondary'}
                         onClick={() => toggleWeekday(idx)}
                       >
-                        {label}
+                        {t(`weekdays.${key}`)}
                       </Button>
                     ))}
                   </div>
-                  <Form.Text>Leave empty to repeat on the start day each week.</Form.Text>
+                  <Form.Text>{t('taskModal.weeklyHint')}</Form.Text>
                 </Form.Group>
               )}
 
               {repeatType === 'monthly' && (
                 <Form.Group className="mb-3">
-                  <Form.Label>Days of month</Form.Label>
+                  <Form.Label>{t('taskModal.daysOfMonth')}</Form.Label>
                   <Form.Control
                     value={monthDays}
                     onChange={(e) => setMonthDays(e.target.value)}
-                    placeholder="e.g. 1, 15, 28"
+                    placeholder={t('taskModal.daysOfMonthPlaceholder')}
                   />
-                  <Form.Text>Comma-separated days (1–31). Empty = start date's day.</Form.Text>
+                  <Form.Text>{t('taskModal.daysOfMonthHint')}</Form.Text>
                 </Form.Group>
               )}
 
               {repeatType === 'custom' && (
                 <Row className="mb-3 align-items-end">
                   <Col xs={6}>
-                    <Form.Label>Every</Form.Label>
+                    <Form.Label>{t('taskModal.every')}</Form.Label>
                     <Form.Control
                       type="number"
                       min={1}
@@ -248,16 +250,16 @@ export default function TaskModal({
                       value={repeatUnit}
                       onChange={(e) => setRepeatUnit(e.target.value as RepeatUnit)}
                     >
-                      <option value="day">day(s)</option>
-                      <option value="week">week(s)</option>
-                      <option value="month">month(s)</option>
+                      <option value="day">{t('taskModal.unitDay')}</option>
+                      <option value="week">{t('taskModal.unitWeek')}</option>
+                      <option value="month">{t('taskModal.unitMonth')}</option>
                     </Form.Select>
                   </Col>
                 </Row>
               )}
 
               <Form.Group className="mb-2">
-                <Form.Label>Description (Markdown)</Form.Label>
+                <Form.Label>{t('taskModal.description')}</Form.Label>
                 <div data-color-mode={theme}>
                   <MDEditor
                     value={description}
@@ -273,10 +275,10 @@ export default function TaskModal({
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onClose}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button onClick={submit} disabled={busy || !title.trim()}>
-          {busy ? 'Saving…' : 'Save task'}
+          {busy ? t('taskModal.saving') : t('taskModal.saveTask')}
         </Button>
       </Modal.Footer>
     </Modal>

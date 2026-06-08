@@ -1,5 +1,6 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { Modal, Form, Button, Alert, ListGroup, Badge, Spinner, InputGroup } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { List, ListShare } from '../types';
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function ShareModal({ show, list, onClose, onChanged }: Props) {
+  const { t } = useTranslation();
   const [shares, setShares] = useState<ListShare[]>([]);
   const [email, setEmail] = useState('');
   const [canEdit, setCanEdit] = useState(false);
@@ -80,17 +82,17 @@ export default function ShareModal({ show, list, onClose, onChanged }: Props) {
   return (
     <Modal show={show} onHide={onClose}>
       <Modal.Header closeButton>
-        <Modal.Title>Share “{list.name}”</Modal.Title>
+        <Modal.Title>{t('shareModal.title', { name: list.name })}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         {error && <Alert variant="danger">{error}</Alert>}
 
         <Form onSubmit={submit} className="mb-3">
-          <Form.Label>Invite someone by email</Form.Label>
+          <Form.Label>{t('shareModal.inviteByEmail')}</Form.Label>
           <InputGroup>
             <Form.Control
               type="email"
-              placeholder="person@example.com"
+              placeholder={t('shareModal.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoFocus
@@ -100,19 +102,19 @@ export default function ShareModal({ show, list, onClose, onChanged }: Props) {
               value={canEdit ? 'edit' : 'view'}
               onChange={(e) => setCanEdit(e.target.value === 'edit')}
             >
-              <option value="view">Read only</option>
-              <option value="edit">Can edit</option>
+              <option value="view">{t('shareModal.readOnlyOption')}</option>
+              <option value="edit">{t('shareModal.canEditOption')}</option>
             </Form.Select>
             <Button type="submit" disabled={busy || !email.trim()}>
-              {busy ? 'Sharing…' : 'Share'}
+              {busy ? t('shareModal.sharing') : t('common.share')}
             </Button>
           </InputGroup>
           <Form.Text className="text-secondary">
-            Read-only members can view tasks but only the owner and editors can change them.
+            {t('shareModal.hint')}
           </Form.Text>
         </Form>
 
-        <div className="fw-semibold mb-2">People with access</div>
+        <div className="fw-semibold mb-2">{t('shareModal.peopleWithAccess')}</div>
         {loading ? (
           <div className="text-center py-3">
             <Spinner animation="border" size="sm" />
@@ -121,7 +123,7 @@ export default function ShareModal({ show, list, onClose, onChanged }: Props) {
           <ListGroup>
             <ListGroup.Item className="d-flex justify-content-between align-items-center">
               <span>
-                {list.owner_email} <Badge bg="primary">owner</Badge>
+                {list.owner_email} <Badge bg="primary">{t('common.owner')}</Badge>
               </span>
             </ListGroup.Item>
             {shares.map((s) => (
@@ -137,18 +139,18 @@ export default function ShareModal({ show, list, onClose, onChanged }: Props) {
                     value={s.can_edit ? 'edit' : 'view'}
                     onChange={(e) => changePermission(s, e.target.value === 'edit')}
                   >
-                    <option value="view">Read only</option>
-                    <option value="edit">Can edit</option>
+                    <option value="view">{t('shareModal.readOnlyOption')}</option>
+                    <option value="edit">{t('shareModal.canEditOption')}</option>
                   </Form.Select>
                   <Button variant="outline-danger" size="sm" onClick={() => revoke(s)}>
-                    Remove
+                    {t('common.remove')}
                   </Button>
                 </div>
               </ListGroup.Item>
             ))}
             {shares.length === 0 && (
               <ListGroup.Item className="text-secondary small">
-                Not shared with anyone yet.
+                {t('shareModal.notSharedYet')}
               </ListGroup.Item>
             )}
           </ListGroup>
@@ -156,7 +158,7 @@ export default function ShareModal({ show, list, onClose, onChanged }: Props) {
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onClose}>
-          Done
+          {t('common.done')}
         </Button>
       </Modal.Footer>
     </Modal>

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { Badge, Form } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   value: string[];
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function TagInput({ value, suggestions, onChange }: Props) {
+  const { t } = useTranslation();
   const [input, setInput] = useState('');
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -39,23 +41,23 @@ export default function TagInput({ value, suggestions, onChange }: Props) {
   return (
     <div className="tag-input position-relative" ref={wrapperRef}>
       <div className="d-flex flex-wrap gap-1 mb-1">
-        {value.map((t) => (
+        {value.map((tag) => (
           <Badge
-            key={t}
+            key={tag}
             bg="primary"
             className="tag-chip d-flex align-items-center gap-1"
             role="button"
-            onClick={() => removeTag(t)}
-            title="Click to remove"
+            onClick={() => removeTag(tag)}
+            title={t('tagInput.clickToRemove')}
           >
-            {t} <span aria-hidden>×</span>
+            {tag} <span aria-hidden>×</span>
           </Badge>
         ))}
       </div>
       <Form.Control
         type="text"
         value={input}
-        placeholder="Type to search or add a tag…"
+        placeholder={t('tagInput.placeholder')}
         onChange={(e) => {
           setInput(e.target.value);
           setOpen(true);
@@ -91,7 +93,7 @@ export default function TagInput({ value, suggestions, onChange }: Props) {
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => addTag(input)}
             >
-              + Create “{input.trim()}”
+              {t('tagInput.create', { tag: input.trim() })}
             </button>
           )}
         </div>

@@ -1,11 +1,13 @@
 import { useState, FormEvent } from 'react';
 import { Card, Form, Button, Alert, Container } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 export default function AuthPage() {
   const { signin, signup } = useAuth();
   const { theme, toggle } = useTheme();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,43 +33,47 @@ export default function AuthPage() {
       <Container style={{ maxWidth: 420 }}>
         <div className="text-end mb-2">
           <Button variant="outline-secondary" size="sm" onClick={toggle}>
-            {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+            {theme === 'dark' ? t('nav.light') : t('nav.dark')}
           </Button>
         </div>
         <Card className="shadow-sm border-0">
           <Card.Body className="p-4">
             <h1 className="brand-gradient text-center mb-1">mTodo</h1>
             <p className="text-center text-secondary mb-4">
-              {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+              {mode === 'signin' ? t('auth.welcomeBack') : t('auth.createAccount')}
             </p>
 
             {error && <Alert variant="danger">{error}</Alert>}
 
             <Form onSubmit={submit}>
               <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
+                <Form.Label>{t('auth.email')}</Form.Label>
                 <Form.Control
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   required
                   autoFocus
                 />
               </Form.Group>
               <Form.Group className="mb-4">
-                <Form.Label>Password</Form.Label>
+                <Form.Label>{t('auth.password')}</Form.Label>
                 <Form.Control
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  placeholder={t('auth.passwordPlaceholder')}
                   required
                   minLength={6}
                 />
               </Form.Group>
               <Button type="submit" className="w-100" disabled={busy}>
-                {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Sign up'}
+                {busy
+                  ? t('common.pleaseWait')
+                  : mode === 'signin'
+                    ? t('auth.signIn')
+                    : t('auth.signUp')}
               </Button>
             </Form>
 
@@ -80,9 +86,7 @@ export default function AuthPage() {
                   setMode(mode === 'signin' ? 'signup' : 'signin');
                 }}
               >
-                {mode === 'signin'
-                  ? "Don't have an account? Sign up"
-                  : 'Already have an account? Sign in'}
+                {mode === 'signin' ? t('auth.noAccount') : t('auth.haveAccount')}
               </Button>
             </div>
           </Card.Body>

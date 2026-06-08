@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Container, Row, Col, Card, Button, ListGroup, Form, Alert, Spinner, InputGroup, Badge, Dropdown } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { List, Task, TaskInput } from '../types';
 import TaskCard from '../components/TaskCard';
@@ -25,6 +26,7 @@ const todayStr = () => {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [lists, setLists] = useState<List[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
@@ -96,7 +98,7 @@ export default function DashboardPage() {
   };
 
   const deleteTask = async (task: Task) => {
-    if (!confirm(`Delete task "${task.title}"?`)) return;
+    if (!confirm(t('dashboard.confirmDeleteTask', { title: task.title }))) return;
     await api.deleteTask(task.id);
     setTasks((prev) => prev.filter((t) => t.id !== task.id));
   };
@@ -110,7 +112,7 @@ export default function DashboardPage() {
   };
 
   const deleteList = async (list: List) => {
-    if (!confirm(`Delete list "${list.name}"? Tasks will be kept without a list.`)) return;
+    if (!confirm(t('dashboard.confirmDeleteList', { name: list.name }))) return;
     await api.deleteList(list.id);
     setLists((prev) => prev.filter((l) => l.id !== list.id));
     if (view.kind === 'list' && view.id === list.id) setView({ kind: 'today' });
@@ -118,7 +120,7 @@ export default function DashboardPage() {
 
   const leaveList = async (list: List) => {
     if (!user) return;
-    if (!confirm(`Leave shared list "${list.name}"? You'll lose access until re-invited.`)) return;
+    if (!confirm(t('dashboard.confirmLeaveList', { name: list.name }))) return;
     await api.leaveList(list.id, user.id);
     setLists((prev) => prev.filter((l) => l.id !== list.id));
     if (view.kind === 'list' && view.id === list.id) setView({ kind: 'today' });
@@ -160,10 +162,10 @@ export default function DashboardPage() {
 
   const heading =
     view.kind === 'today'
-      ? `Today · ${todayStr()}`
+      ? t('dashboard.headingToday', { date: todayStr() })
       : view.kind === 'all'
-        ? 'All tasks'
-        : lists.find((l) => l.id === view.id)?.name || 'List';
+        ? t('dashboard.headingAll')
+        : lists.find((l) => l.id === view.id)?.name || t('dashboard.headingList');
 
   const openNew = (title = '') => {
     setEditing(null);
@@ -200,20 +202,20 @@ export default function DashboardPage() {
                   active={view.kind === 'today'}
                   onClick={() => changeView({ kind: 'today' })}
                 >
-                  ⭐ Today
+                  {t('dashboard.today')}
                 </ListGroup.Item>
                 <ListGroup.Item
                   action
                   active={view.kind === 'all'}
                   onClick={() => changeView({ kind: 'all' })}
                 >
-                  📋 All tasks
+                  {t('dashboard.allTasks')}
                 </ListGroup.Item>
               </ListGroup>
             </Card>
 
             <Card className="mb-3">
-              <Card.Header className="fw-semibold">Lists</Card.Header>
+              <Card.Header className="fw-semibold">{t('dashboard.lists')}</Card.Header>
               <ListGroup variant="flush">
                 {lists.map((l) => (
                   <ListGroup.Item
@@ -228,32 +230,32 @@ export default function DashboardPage() {
                     </span>
                     {l.role !== 'owner' && !l.can_edit && (
                       <Badge bg="secondary" className="tag-chip">
-                        read-only
+                        {t('dashboard.readOnly')}
                       </Badge>
                     )}
                     {l.role === 'owner' && l.shared_count > 0 && (
                       <Badge bg="info" className="tag-chip">
-                        shared
+                        {t('dashboard.shared')}
                       </Badge>
                     )}
                   </ListGroup.Item>
                 ))}
                 {lists.length === 0 && (
                   <ListGroup.Item className="text-secondary small">
-                    No lists yet
+                    {t('dashboard.noLists')}
                   </ListGroup.Item>
                 )}
               </ListGroup>
               <Card.Body>
                 <InputGroup size="sm">
                   <Form.Control
-                    placeholder="New list"
+                    placeholder={t('dashboard.newListPlaceholder')}
                     value={newListName}
                     onChange={(e) => setNewListName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && addList()}
                   />
                   <Button variant="outline-primary" onClick={addList}>
-                    Add
+                    {t('common.add')}
                   </Button>
                 </InputGroup>
               </Card.Body>
@@ -261,7 +263,7 @@ export default function DashboardPage() {
 
             <Card>
               <Card.Header className="fw-semibold d-flex justify-content-between align-items-center">
-                <span>Tags</span>
+                <span>{t('dashboard.tags')}</span>
                 {activeTag && (
                   <Button
                     variant="link"
@@ -269,13 +271,13 @@ export default function DashboardPage() {
                     className="p-0 text-decoration-none"
                     onClick={() => setActiveTag(null)}
                   >
-                    Clear
+                    {t('common.clear')}
                   </Button>
                 )}
               </Card.Header>
               <Card.Body className="d-flex flex-wrap gap-1">
                 {tagSuggestions.length === 0 && (
-                  <span className="text-secondary small">No tags yet</span>
+                  <span className="text-secondary small">{t('dashboard.noTags')}</span>
                 )}
                 {tagSuggestions.map((t) => (
                   <Badge
@@ -302,7 +304,9 @@ export default function DashboardPage() {
                   bg={currentList.can_edit ? 'info' : 'secondary'}
                   className="ms-2 align-middle"
                 >
-                  {currentList.can_edit ? 'shared · can edit' : 'shared · read-only'}
+                  {currentList.can_edit
+                    ? t('dashboard.sharedCanEdit')
+                    : t('dashboard.sharedReadOnly')}
                 </Badge>
               )}
               {activeTag && (
@@ -321,12 +325,11 @@ export default function DashboardPage() {
                   {currentList.role === 'owner' ? (
                     <>
                       <Dropdown.Item onClick={() => setShareList(currentList)}>
-                        👥 Share…
+                        👥 {t('dashboard.sharePerson')}
                       </Dropdown.Item>
                       {currentList.shared_count > 0 && (
                         <Dropdown.Header className="small">
-                          Shared with {currentList.shared_count}{' '}
-                          {currentList.shared_count === 1 ? 'person' : 'people'}
+                          {t('dashboard.sharedWith', { count: currentList.shared_count })}
                         </Dropdown.Header>
                       )}
                       <Dropdown.Divider />
@@ -334,19 +337,19 @@ export default function DashboardPage() {
                         className="text-danger"
                         onClick={() => deleteList(currentList)}
                       >
-                        🗑️ Delete list
+                        {t('dashboard.deleteList')}
                       </Dropdown.Item>
                     </>
                   ) : (
                     <>
                       <Dropdown.Header className="small">
-                        Owned by {currentList.owner_email}
+                        {t('dashboard.ownedBy', { email: currentList.owner_email })}
                       </Dropdown.Header>
                       <Dropdown.Item
                         className="text-danger"
                         onClick={() => leaveList(currentList)}
                       >
-                        🚪 Leave list
+                        {t('dashboard.leaveList')}
                       </Dropdown.Item>
                     </>
                   )}
@@ -358,7 +361,7 @@ export default function DashboardPage() {
           {canEditCurrent ? (
             <InputGroup className="mb-3">
               <Form.Control
-                placeholder="Quick add a task — type a title and press Enter"
+                placeholder={t('dashboard.quickAddPlaceholder')}
                 value={quickTitle}
                 onChange={(e) => setQuickTitle(e.target.value)}
                 onKeyDown={(e) => {
@@ -369,34 +372,33 @@ export default function DashboardPage() {
                 }}
               />
               <Button onClick={quickAdd} disabled={quickBusy || !quickTitle.trim()}>
-                {quickBusy ? 'Adding…' : 'Add'}
+                {quickBusy ? t('dashboard.adding') : t('common.add')}
               </Button>
               <Button
                 variant="outline-secondary"
                 onClick={expandQuickAdd}
-                title="Open full form with more options"
+                title={t('dashboard.moreOptionsTitle')}
               >
-                More options
+                {t('dashboard.moreOptions')}
               </Button>
             </InputGroup>
           ) : (
             <Alert variant="secondary" className="py-2 mb-3 small">
-              🔒 This list is shared with you as read-only. Only the owner and editors can
-              make changes.
+              {t('dashboard.readonlyAlert')}
             </Alert>
           )}
 
           <div className="d-flex gap-2 mb-3 flex-wrap align-items-center">
             <Form.Control
               style={{ maxWidth: 280 }}
-              placeholder="Search tasks or #tags…"
+              placeholder={t('dashboard.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
             <Form.Check
               type="switch"
               id="show-completed"
-              label="Show completed"
+              label={t('dashboard.showCompleted')}
               checked={showCompleted}
               onChange={(e) => setShowCompleted(e.target.checked)}
             />
@@ -406,7 +408,7 @@ export default function DashboardPage() {
 
           {filtered.length === 0 ? (
             <Card body className="text-center text-secondary py-5">
-              Nothing here yet. Create your first task!
+              {t('dashboard.empty')}
             </Card>
           ) : (
             filtered.map((task) => (

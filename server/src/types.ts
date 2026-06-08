@@ -1,0 +1,54 @@
+export type Role = 'user' | 'admin';
+
+export interface UserRow {
+  id: number;
+  email: string;
+  password_hash: string;
+  role: Role;
+  created_at: string;
+}
+
+export interface PublicUser {
+  id: number;
+  email: string;
+  role: Role;
+  created_at: string;
+}
+
+export interface ListRow {
+  id: number;
+  user_id: number;
+  name: string;
+  color: string | null;
+  created_at: string;
+}
+
+export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly' | 'custom';
+
+export interface TaskRow {
+  id: number;
+  user_id: number;
+  list_id: number | null;
+  title: string;
+  description: string | null;
+  due_date: string | null; // YYYY-MM-DD
+  repeat_type: RepeatType;
+  repeat_interval: number | null; // for custom: every N units
+  repeat_unit: string | null; // 'day' | 'week' | 'month' for custom
+  repeat_days: string | null; // JSON array of weekday numbers / specific dates
+  completed: number; // 0 | 1
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TagRow {
+  id: number;
+  user_id: number;
+  name: string;
+}
+
+export interface AuthPayload {
+  id: number;
+  email: string;
+  role: Role;
+}

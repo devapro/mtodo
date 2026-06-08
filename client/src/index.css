@@ -1,0 +1,64 @@
+:root {
+  --mtodo-radius: 0.6rem;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.brand-gradient {
+  background: linear-gradient(90deg, #6610f2, #0d6efd);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}
+
+.task-card {
+  border-radius: var(--mtodo-radius);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.12);
+}
+.task-card.done .task-title {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.sidebar {
+  position: sticky;
+  top: 1rem;
+}
+
+.tag-chip {
+  font-size: 0.75rem;
+}
+
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(102, 16, 242, 0.12), rgba(13, 110, 253, 0.12));
+}
+
+/* Markdown editor should respect the Bootstrap theme reasonably */
+[data-bs-theme='dark'] .w-md-editor {
+  --color-canvas-default: #1e1e2d;
+}
+
+.md-preview img {
+  max-width: 100%;
+}
+
+.tag-input .dropdown-menu {
+  max-height: 220px;
+  overflow-y: auto;
+  width: 100%;
+}

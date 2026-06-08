@@ -1,0 +1,32 @@
+services:
+  server:
+    build:
+      context: ./server
+    container_name: mtodo-server
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:-super-secret-change-me}
+      DATABASE_FILE: /data/mtodo.sqlite
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin12345}
+    volumes:
+      - mtodo-data:/data
+    ports:
+      - "4000:4000"
+
+  client:
+    build:
+      context: ./client
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
+    container_name: mtodo-client
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "5173:80"
+
+volumes:
+  mtodo-data:

@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>mTodo — a modern TODO app (Express + SQLite + React)</title>
+<meta name="description" content="mTodo is a modern, self-hostable TODO app: lists, tags, recurring tasks, Markdown, sharing, dark mode, i18n, a Telegram bot and an installable PWA. Built with Express, SQLite, React & TypeScript." />
+<meta property="og:title" content="mTodo — a modern, self-hostable TODO app" />
+<meta property="og:description" content="Lists, tags, recurring tasks, Markdown, sharing, dark mode, i18n, a Telegram bot and an installable PWA. Express + SQLite + React + TypeScript." />
+<meta property="og:type" content="website" />
+<link rel="icon" href="logo.svg" type="image/svg+xml" />
+<style>
+  :root {
+    --bg: #0b0d17;
+    --bg-soft: #11131f;
+    --card: #161827;
+    --card-border: #242741;
+    --text: #e7e9f2;
+    --muted: #a3a8c3;
+    --brand-a: #6610f2;
+    --brand-b: #0d6efd;
+    --radius: 16px;
+    --maxw: 1080px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  .gradient-text {
+    background: linear-gradient(120deg, #b388ff, #5aa2ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Nav */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(12px);
+    background: rgba(11,13,23,0.7);
+    border-bottom: 1px solid var(--card-border);
+  }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 18px; }
+  .brand img { width: 32px; height: 32px; border-radius: 8px; }
+  .nav-links { display: flex; align-items: center; gap: 28px; }
+  .nav-links a { color: var(--muted); font-size: 15px; transition: color .15s; }
+  .nav-links a:hover { color: var(--text); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 20px; border-radius: 10px; font-weight: 600; font-size: 15px;
+    border: 1px solid transparent; cursor: pointer; transition: transform .12s, box-shadow .2s, background .2s;
+  }
+  .btn-primary {
+    background: linear-gradient(120deg, var(--brand-a), var(--brand-b));
+    color: #fff; box-shadow: 0 8px 24px -8px rgba(102,16,242,.6);
+  }
+  .btn-primary:hover { transform: translateY(-2px); }
+  .btn-ghost { background: var(--card); border-color: var(--card-border); color: var(--text); }
+  .btn-ghost:hover { border-color: #3a3e63; }
+  @media (max-width: 720px) { .nav-links a:not(.btn) { display: none; } }
+
+  /* Hero */
+  .hero { position: relative; overflow: hidden; padding: 96px 0 80px; text-align: center; }
+  .hero::before {
+    content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(600px 320px at 50% -10%, rgba(102,16,242,.35), transparent 70%),
+      radial-gradient(500px 300px at 80% 10%, rgba(13,110,253,.25), transparent 70%);
+    pointer-events: none;
+  }
+  .hero .wrap { position: relative; }
+  .hero-logo { width: 96px; height: 96px; border-radius: 24px; box-shadow: 0 20px 60px -20px rgba(102,16,242,.7); }
+  .hero h1 { font-size: clamp(36px, 6vw, 60px); line-height: 1.05; margin: 28px 0 16px; letter-spacing: -1.5px; }
+  .hero p.lead { font-size: clamp(17px, 2.4vw, 21px); color: var(--muted); max-width: 680px; margin: 0 auto 36px; }
+  .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .stack-badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 40px; }
+  .badge {
+    font-size: 13px; color: var(--muted); background: var(--card);
+    border: 1px solid var(--card-border); padding: 6px 14px; border-radius: 999px;
+  }
+
+  /* Section */
+  section { padding: 72px 0; }
+  .section-head { text-align: center; max-width: 640px; margin: 0 auto 48px; }
+  .section-head h2 { font-size: clamp(28px, 4vw, 40px); margin: 0 0 12px; letter-spacing: -1px; }
+  .section-head p { color: var(--muted); font-size: 17px; margin: 0; }
+  .eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 13px; font-weight: 700; color: #8a7bff; margin-bottom: 12px; }
+
+  /* Features */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 900px) { .features { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .features { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: var(--radius); padding: 24px; transition: transform .15s, border-color .2s;
+  }
+  .card:hover { transform: translateY(-4px); border-color: #3a3e63; }
+  .card .ico { font-size: 26px; margin-bottom: 14px; display: block; }
+  .card h3 { margin: 0 0 8px; font-size: 18px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  /* Install */
+  .install { background: var(--bg-soft); border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); }
+  .tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 28px; flex-wrap: wrap; }
+  .tab {
+    padding: 10px 22px; border-radius: 999px; border: 1px solid var(--card-border);
+    background: var(--card); color: var(--muted); cursor: pointer; font-weight: 600; font-size: 15px;
+    transition: all .15s;
+  }
+  .tab.active { color: #fff; background: linear-gradient(120deg, var(--brand-a), var(--brand-b)); border-color: transparent; }
+  .panel { display: none; max-width: 760px; margin: 0 auto; }
+  .panel.active { display: block; }
+  .panel h3 { font-size: 18px; margin: 0 0 6px; }
+  .panel .step-note { color: var(--muted); font-size: 15px; margin: 0 0 14px; }
+  pre {
+    position: relative; background: #0a0c14; border: 1px solid var(--card-border);
+    border-radius: 12px; padding: 18px 20px; overflow-x: auto; margin: 0 0 22px;
+    font-size: 14px; line-height: 1.7;
+  }
+  pre code { font-family: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #d6dbff; }
+  .cmt { color: #6b7299; }
+  .copy {
+    position: absolute; top: 10px; right: 10px; font-size: 12px; padding: 4px 10px;
+    background: var(--card); border: 1px solid var(--card-border); border-radius: 7px;
+    color: var(--muted); cursor: pointer;
+  }
+  .copy:hover { color: var(--text); }
+  .urls { display: flex; gap: 24px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+  .urls code { color: #9fd0ff; }
+
+  /* Usage steps */
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  @media (max-width: 880px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .steps { grid-template-columns: 1fr; } }
+  .step .num {
+    width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+    font-weight: 700; background: linear-gradient(120deg, var(--brand-a), var(--brand-b));
+    margin-bottom: 14px;
+  }
+  .step h3 { margin: 0 0 6px; font-size: 17px; }
+  .step p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  /* Footer */
+  footer { border-top: 1px solid var(--card-border); padding: 40px 0; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  footer .brand { font-size: 16px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="logo.svg" alt="mTodo logo" /> mTodo</a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="#usage">Usage</a>
+      <a class="btn btn-ghost" href="https://github.com/devapro/mtodo" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <img class="hero-logo" src="logo.svg" alt="mTodo logo" />
+    <h1>Your tasks, <span class="gradient-text">done right</span>.</h1>
+    <p class="lead">
+      mTodo is a modern, self-hostable TODO app — lists, tags, recurring tasks, Markdown,
+      list sharing, a Telegram bot and an installable PWA. Built with Express, SQLite,
+      React &amp; TypeScript.
+    </p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="#install">Get started</a>
+      <a class="btn btn-ghost" href="https://github.com/devapro/mtodo" target="_blank" rel="noopener">
+        ★ Star on GitHub
+      </a>
+    </div>
+    <div class="stack-badges">
+      <span class="badge">Express.js</span>
+      <span class="badge">node:sqlite</span>
+      <span class="badge">React + Vite</span>
+      <span class="badge">TypeScript</span>
+      <span class="badge">Docker</span>
+      <span class="badge">PWA</span>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Features</div>
+      <h2>Everything you need to stay organized</h2>
+      <p>A focused feature set that scales from a personal LAN install to a locked-down public deployment.</p>
+    </div>
+    <div class="features">
+      <div class="card"><span class="ico">✅</span><h3>Tasks &amp; lists</h3><p>Create, edit, complete and delete tasks, organized into TODO lists with a clean sidebar.</p></div>
+      <div class="card"><span class="ico">🤝</span><h3>List sharing</h3><p>Share a list by email as read-only or editor. Manage members, change permissions, or leave a shared list.</p></div>
+      <div class="card"><span class="ico">🔁</span><h3>Recurring tasks</h3><p>Daily, weekly (pick weekdays), monthly (pick days) or fully custom every N days/weeks/months.</p></div>
+      <div class="card"><span class="ico">🏷️</span><h3>Tags</h3><p>Autocomplete from existing tags or type a new one to create it on the fly.</p></div>
+      <div class="card"><span class="ico">📝</span><h3>Markdown descriptions</h3><p>Write task descriptions in a Markdown editor; they render as rich HTML.</p></div>
+      <div class="card"><span class="ico">⭐</span><h3>Today view</h3><p>See tasks due today plus recurring tasks that occur today, all in one focused place.</p></div>
+      <div class="card"><span class="ico">🗣️</span><h3>Natural-language add</h3><p>Type <code>Buy milk #groceries tomorrow</code> to set title, tags and due date in one go.</p></div>
+      <div class="card"><span class="ico">✈️</span><h3>Telegram bot</h3><p>Link your account to review lists, add tasks and complete them from Telegram — or log in with Telegram.</p></div>
+      <div class="card"><span class="ico">🌍</span><h3>Localization</h3><p>English, Russian, Ukrainian and Serbian, with automatic browser language detection.</p></div>
+      <div class="card"><span class="ico">🌗</span><h3>Dark / light theme</h3><p>Toggle in the navbar; your preference is remembered across sessions.</p></div>
+      <div class="card"><span class="ico">📲</span><h3>Installable PWA</h3><p>Install on desktop &amp; mobile, run in a standalone window, and work offline via a service worker.</p></div>
+      <div class="card"><span class="ico">🛡️</span><h3>Auth &amp; admin</h3><p>JWT sign-up / sign-in, an admin panel to manage users, plus Helmet, CORS, rate limiting &amp; Zod validation.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="install" class="install">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Installation</div>
+      <h2>Up and running in minutes</h2>
+      <p>Run the whole stack in Docker for production, or locally with hot reload for development.</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="docker">🐳 Docker (production)</button>
+      <button class="tab" data-tab="dev">⚡ Local (development)</button>
+    </div>
+
+    <div class="panel active" data-panel="docker">
+      <h3>1. Configure your environment</h3>
+      <p class="step-note">Copy the example env file and adjust secrets / admin credentials.</p>
+      <pre><code><span class="cmt"># requires Docker + Docker Compose</span>
+git clone https://github.com/devapro/mtodo.git
+cd mtodo
+cp .env.example .env</code></pre>
+
+      <h3>2. Bring up the stack</h3>
+      <p class="step-note">Builds the API and client, with a persistent SQLite volume.</p>
+      <pre><code>npm run docker:up
+<span class="cmt"># add -d to run in the background; npm run docker:down to stop</span></code></pre>
+
+      <div class="urls">
+        <span>Client: <code>http://localhost:5173</code></span>
+        <span>API: <code>http://localhost:4000/api</code></span>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="dev">
+      <h3>1. Install dependencies</h3>
+      <p class="step-note">Requires Node.js 24+ (for the built-in <code>node:sqlite</code> module).</p>
+      <pre><code>git clone https://github.com/devapro/mtodo.git
+cd mtodo
+cp .env.example .env
+npm run install:all</code></pre>
+
+      <h3>2. Start the API and client</h3>
+      <p class="step-note">Run each in its own terminal — both support hot reload.</p>
+      <pre><code><span class="cmt"># terminal 1 — API on http://localhost:4000</span>
+npm run dev:server
+
+<span class="cmt"># terminal 2 — Vite client on http://localhost:5173</span>
+npm run dev:client</code></pre>
+
+      <div class="urls">
+        <span>Sign in as admin with <code>ADMIN_EMAIL</code> / <code>ADMIN_PASSWORD</code> from <code>.env</code></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="usage">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Usage</div>
+      <h2>How to use mTodo</h2>
+      <p>From first sign-in to tasks in your pocket, here's the typical flow.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <h3>Sign in</h3>
+        <p>Open the client and sign up, or log in as admin using the credentials from your <code>.env</code>.</p>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <h3>Create lists &amp; tasks</h3>
+        <p>Add TODO lists, then create tasks with tags, due dates, repeats and Markdown notes.</p>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <h3>Share &amp; collaborate</h3>
+        <p>Share a list by email as read-only or editor, and manage members from the list menu.</p>
+      </div>
+      <div class="step">
+        <div class="num">4</div>
+        <h3>Take it anywhere</h3>
+        <p>Install the PWA on desktop or mobile, and link the Telegram bot to manage tasks on the go.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="logo.svg" alt="mTodo logo" style="width:24px;height:24px;border-radius:6px" /> mTodo</a>
+    <span>A modern TODO PoC · Express + SQLite + React + TypeScript</span>
+    <a href="https://github.com/devapro/mtodo" target="_blank" rel="noopener">github.com/devapro/mtodo →</a>
+  </div>
+</footer>
+
+<script>
+  // Tabs
+  document.querySelectorAll('.tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var name = tab.getAttribute('data-tab');
+      document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('active', t === tab); });
+      document.querySelectorAll('.panel').forEach(function (p) {
+        p.classList.toggle('active', p.getAttribute('data-panel') === name);
+      });
+    });
+  });
+
+  // Copy-to-clipboard buttons on code blocks
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var btn = document.createElement('button');
+    btn.className = 'copy';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.querySelector('code').innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+      });
+    });
+    pre.appendChild(btn);
+  });
+</script>
+</body>
+</html>

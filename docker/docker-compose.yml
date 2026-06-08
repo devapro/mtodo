@@ -1,6 +1,9 @@
-# Run from this folder:  docker compose up --build
+# Run from this folder:  docker compose -p mtodo up --build
 # (build context is the repository root, env vars come from ../.env)
-name: mtodo
+#
+# Note: the top-level `name:` key requires Docker Compose v2 (`docker compose`).
+# The legacy v1 binary (`docker-compose`) rejects it, so the project name is
+# passed via `-p mtodo` / COMPOSE_PROJECT_NAME instead to stay compatible.
 
 services:
   server:

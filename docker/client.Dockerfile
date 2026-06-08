@@ -1,7 +1,10 @@
 # Build context is the repository root (see docker/docker-compose.yml).
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
-ARG VITE_API_URL=http://localhost:4000/api
+# Default to a relative base URL so the client talks to the API same-origin
+# (nginx proxies /api/ to the server container). Works on localhost, LAN, and
+# ngrok without baking a host into the bundle.
+ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
 COPY client/package*.json ./
 RUN npm install

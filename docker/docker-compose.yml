@@ -32,7 +32,12 @@ services:
       context: ..
       dockerfile: docker/client.Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
+        # Relative base URL: the client calls the API same-origin and nginx
+        # proxies /api/ to the server container (see docker/nginx.conf). This
+        # works on localhost, LAN, and the ngrok tunnel alike. A dedicated var
+        # (not VITE_API_URL) is used so the dev value in ../.env can't leak into
+        # the prod bundle. Override only to host the API on a separate origin.
+        VITE_API_URL: ${DOCKER_CLIENT_API_URL:-/api}
     container_name: mtodo-client
     restart: unless-stopped
     depends_on:

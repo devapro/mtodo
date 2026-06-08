@@ -23,6 +23,22 @@ if (config.isProduction && isUsingDefaultJwtSecret()) {
   process.exit(1);
 }
 
+if (config.telegram.botToken && !config.telegram.botUsername) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[telegram] TELEGRAM_BOT_TOKEN is set but TELEGRAM_BOT_USERNAME is missing. ' +
+      'Telegram UI/login/linking will stay disabled until the bot username is configured.'
+  );
+}
+
+if (!config.telegram.botToken && config.telegram.botUsername) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[telegram] TELEGRAM_BOT_USERNAME is set but TELEGRAM_BOT_TOKEN is missing. ' +
+      'Telegram integration will stay disabled until the bot token is configured.'
+  );
+}
+
 const app = express();
 
 // When deployed behind a reverse proxy (nginx, traefik, ngrok), trust the

@@ -153,6 +153,15 @@
     "joined": "Joined",
     "actions": "Actions",
     "delete": "Delete",
-    "confirmDelete": "Delete user {{email}}? All their data will be removed."
+    "confirmDelete": "Delete user {{email}}? All their data will be removed.",
+    "newUser": "New user",
+    "password": "Password",
+    "newPassword": "New password",
+    "passwordHint": "At least 6 characters.",
+    "resetPassword": "Reset password",
+    "resetPasswordFor": "Set a new password for {{email}}.",
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel"
   }
 }

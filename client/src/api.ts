@@ -92,5 +92,15 @@ export const api = {
 
   // admin
   getUsers: () => request<AdminUser[]>('/admin/users'),
+  createUser: (email: string, password: string, role: 'user' | 'admin') =>
+    request<AdminUser>('/admin/users', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, role }),
+    }),
+  resetUserPassword: (id: number, password: string) =>
+    request<void>(`/admin/users/${id}/password`, {
+      method: 'PATCH',
+      body: JSON.stringify({ password }),
+    }),
   deleteUser: (id: number) => request<void>(`/admin/users/${id}`, { method: 'DELETE' }),
 };

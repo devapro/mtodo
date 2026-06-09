@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Container, Card, Form, Button, Badge, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,12 @@ import { useConfirm } from '../context/ConfirmContext';
 import { useToast } from '../context/ToastContext';
 import { api } from '../api';
 import { SUPPORTED_LANGUAGES } from '../i18n';
+import {
+  ListsParseError,
+  downloadLists,
+  listToExport,
+  parseListsFile,
+} from '../lib/listsTransfer';
 
 export default function SettingsPage() {
   const { user, setUser, refresh, signout } = useAuth();
@@ -16,6 +22,10 @@ export default function SettingsPage() {
   const toast = useToast();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const currentLang = (i18n.resolvedLanguage || i18n.language || 'en').slice(0, 2);
 
@@ -87,6 +97,83 @@ export default function SettingsPage() {
     navigate('/login');
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const lists = await api.getLists();
+      const exported = await Promise.all(
+        lists.map(async (list) => listToExport(list, await api.getTasks({ listId: list.id })))
+      );
+      downloadLists(exported);
+      toast.success(t('settings.listsExported', { count: exported.length }));
+    } catch (err) {
+      toast.error((err as Error).message || t('settings.listsExportFailed'));
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImportClick = () => fileInputRef.current?.click();
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset so selecting the same file again re-triggers the change event.
+    e.target.value = '';
+    if (!file) return;
+
+    let lists;
+    try {
+      lists = parseListsFile(await file.text());
+    } catch (err) {
+      const reason = err instanceof ListsParseError ? t(`settings.listsError.${err.message}`) : '';
+      toast.error(
+        reason ? `${t('settings.listsImportFailed')}: ${reason}` : t('settings.listsImportFailed')
+      );
+      return;
+    }
+
+    if (lists.length === 0) {
+      toast.error(t('settings.listsError.empty'));
+      return;
+    }
+
+    const ok = await confirm({
+      message: t('settings.listsImportConfirm', { count: lists.length }),
+      confirmLabel: t('settings.listsImport'),
+      variant: 'primary',
+    });
+    if (!ok) return;
+
+    setImporting(true);
+    try {
+      let taskCount = 0;
+      for (const list of lists) {
+        const created = await api.createList(list.name, { color: list.color, emoji: list.emoji });
+        for (const task of list.tasks) {
+          const newTask = await api.createTask({
+            title: task.title,
+            description: task.description,
+            list_id: created.id,
+            due_date: task.due_date,
+            repeat_type: task.repeat_type,
+            repeat_interval: task.repeat_interval,
+            repeat_unit: task.repeat_unit,
+            repeat_days: task.repeat_days,
+            tags: task.tags,
+          });
+          // POST always creates an open task, so flip completed ones afterward.
+          if (task.completed) await api.updateTask(newTask.id, { completed: true });
+          taskCount += 1;
+        }
+      }
+      toast.success(t('settings.listsImported', { lists: lists.length, tasks: taskCount }));
+    } catch (err) {
+      toast.error((err as Error).message || t('settings.listsImportFailed'));
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <Container className="pb-5" style={{ maxWidth: 640 }}>
       <h3 className="mb-4">{t('settings.title')}</h3>
@@ -114,6 +201,38 @@ export default function SettingsPage() {
               {theme === 'dark' ? t('nav.light') : t('nav.dark')}
             </Button>
           </Form.Group>
+        </Card.Body>
+      </Card>
+
+      <Card className="mb-3">
+        <Card.Header className="fw-semibold">{t('settings.preferences')}</Card.Header>
+        <Card.Body>
+          <p className="text-secondary small mb-3">{t('settings.listsHint')}</p>
+          <div className="d-flex gap-2 flex-wrap">
+            <Button
+              variant="outline-primary"
+              size="sm"
+              onClick={handleExport}
+              disabled={exporting || importing}
+            >
+              {exporting ? <Spinner size="sm" animation="border" /> : t('settings.listsExport')}
+            </Button>
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              onClick={handleImportClick}
+              disabled={exporting || importing}
+            >
+              {importing ? <Spinner size="sm" animation="border" /> : t('settings.listsImport')}
+            </Button>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="d-none"
+            onChange={handleImportFile}
+          />
         </Card.Body>
       </Card>
 

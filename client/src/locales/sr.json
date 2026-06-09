@@ -44,7 +44,23 @@
     "tgCheck": "Повезао сам",
     "tgConnectedAs": "Повезано као",
     "tgUnlink": "Прекини везу",
-    "tgConfirmUnlink": "Прекинути везу вашег Telegram налога са mTodo?"
+    "tgConfirmUnlink": "Прекинути везу вашег Telegram налога са mTodo?",
+    "preferences": "Подешавања",
+    "listsHint": "Извезите своје листе и њихове задатке као JSON датотеку или их увезите из ње.",
+    "listsExport": "Извези листе",
+    "listsImport": "Увези листе",
+    "listsExported": "Извезено листа: {{count}}",
+    "listsImported": "Увезено листа: {{lists}}, задатака: {{tasks}}",
+    "listsExportFailed": "Није могуће извести листе",
+    "listsImportFailed": "Није могуће увести листе",
+    "listsImportConfirm": "Увези листе ({{count}})? Биће додате постојећим листама.",
+    "listsError": {
+      "invalidJson": "датотека није исправан JSON",
+      "invalidShape": "неочекивани садржај датотеке",
+      "missingListName": "листи недостаје назив",
+      "missingTaskTitle": "задатку недостаје наслов",
+      "empty": "датотека не садржи листе"
+    }
   },
   "auth": {
     "welcomeBack": "Добро дошли назад",

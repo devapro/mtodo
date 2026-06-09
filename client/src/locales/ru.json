@@ -44,7 +44,23 @@
     "tgCheck": "Я привязал(а)",
     "tgConnectedAs": "Подключено как",
     "tgUnlink": "Отвязать",
-    "tgConfirmUnlink": "Отключить ваш аккаунт Telegram от mTodo?"
+    "tgConfirmUnlink": "Отключить ваш аккаунт Telegram от mTodo?",
+    "preferences": "Настройки",
+    "listsHint": "Экспортируйте списки и их задачи в JSON-файл или импортируйте их из него.",
+    "listsExport": "Экспорт списков",
+    "listsImport": "Импорт списков",
+    "listsExported": "Экспортировано списков: {{count}}",
+    "listsImported": "Импортировано списков: {{lists}}, задач: {{tasks}}",
+    "listsExportFailed": "Не удалось экспортировать списки",
+    "listsImportFailed": "Не удалось импортировать списки",
+    "listsImportConfirm": "Импортировать списки ({{count}})? Они будут добавлены к существующим.",
+    "listsError": {
+      "invalidJson": "файл не является корректным JSON",
+      "invalidShape": "неожиданное содержимое файла",
+      "missingListName": "у списка отсутствует название",
+      "missingTaskTitle": "у задачи отсутствует заголовок",
+      "empty": "файл не содержит списков"
+    }
   },
   "auth": {
     "welcomeBack": "С возвращением",

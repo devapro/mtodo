@@ -8,3 +8,6 @@ data/
 *.sqlite
 *.sqlite3
 .DS_Store
+
+# Database backups produced by the backup service
+backups/

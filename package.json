@@ -10,7 +10,10 @@
     "dev:client": "npm --prefix client run dev",
     "build": "npm --prefix server run build && npm --prefix client run build",
     "docker:up": "docker compose -f docker/docker-compose.yml up --build",
-    "docker:down": "docker compose -f docker/docker-compose.yml down"
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "db:backup": "docker compose -p mtodo -f docker/docker-compose.yml exec backup sh /scripts/backup.sh",
+    "db:backups": "docker compose -p mtodo -f docker/docker-compose.yml run --rm backup sh /scripts/restore.sh --list",
+    "db:restore": "docker compose -p mtodo -f docker/docker-compose.yml run --rm backup sh /scripts/restore.sh"
   },
   "dependencies": {
     "express-rate-limit": "^8.5.2",

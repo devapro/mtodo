@@ -45,6 +45,34 @@ services:
     ports:
       - "5173:80"
 
+  # Daily SQLite backup sidecar.
+  # Shares the server's data volume (read-only) and writes timestamped, gzipped
+  # snapshots to ./backups on the host. On startup it takes an immediate backup,
+  # then one every day at BACKUP_TIME (UTC). See docker/backup/ for the scripts.
+  backup:
+    build:
+      context: ..
+      dockerfile: docker/backup.Dockerfile
+    container_name: mtodo-backup
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      DATABASE_FILE: /data/mtodo.sqlite
+      BACKUP_DIR: /backups
+      # Daily backup time (HH:MM, UTC).
+      BACKUP_TIME: ${BACKUP_TIME:-03:00}
+      # How many days of backups to keep before pruning.
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
+    volumes:
+      # Live database. The scheduler only reads it; mounted read-write so the
+      # same service can also run restore.sh (which replaces the file) via
+      # `docker compose run --rm backup sh /scripts/restore.sh`.
+      - mtodo-data:/data
+      # The "specific folder" backups are copied to, bind-mounted to the host so
+      # snapshots survive even if the Docker volumes are removed.
+      - ${BACKUP_HOST_DIR:-../backups}:/backups
+
   # Exposes the client to the public internet via an ngrok tunnel.
   # Set NGROK_AUTHTOKEN in ../.env (get one at https://dashboard.ngrok.com).
   # Inspect tunnels / public URL at http://localhost:4040.

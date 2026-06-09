@@ -215,6 +215,7 @@
       <div class="card"><span class="ico">🌗</span><h3>Dark / light theme</h3><p>Toggle in the navbar; your preference is remembered across sessions.</p></div>
       <div class="card"><span class="ico">📲</span><h3>Installable PWA</h3><p>Install on desktop &amp; mobile, run in a standalone window, and work offline via a service worker.</p></div>
       <div class="card"><span class="ico">🛡️</span><h3>Auth &amp; admin</h3><p>JWT sign-up / sign-in, an admin panel to manage users, plus Helmet, CORS, rate limiting &amp; Zod validation.</p></div>
+      <div class="card"><span class="ico">💾</span><h3>Automated backups</h3><p>A Docker sidecar takes a consistent SQLite snapshot on deploy and daily, gzips it to a host folder, prunes old ones, and ships a one-command restore.</p></div>
     </div>
   </div>
 </section>
@@ -244,6 +245,17 @@ cp .env.example .env</code></pre>
       <p class="step-note">Builds the API and client, with a persistent SQLite volume.</p>
       <pre><code>npm run docker:up
 <span class="cmt"># add -d to run in the background; npm run docker:down to stop</span></code></pre>
+
+      <h3>3. Backups (automatic)</h3>
+      <p class="step-note">A backup sidecar snapshots the database on startup and every day, copying gzipped backups to <code>./backups</code>. Restore any time.</p>
+      <pre><code><span class="cmt"># on-demand backup / list backups</span>
+npm run db:backup
+npm run db:backups
+
+<span class="cmt"># restore newest backup (stop the server during the swap)</span>
+docker compose -p mtodo -f docker/docker-compose.yml stop server
+npm run db:restore
+docker compose -p mtodo -f docker/docker-compose.yml start server</code></pre>
 
       <div class="urls">
         <span>Client: <code>http://localhost:5173</code></span>

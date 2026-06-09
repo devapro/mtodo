@@ -26,6 +26,7 @@ A simple, modern TODO Proof of Concept built with a TypeScript stack.
 - 🗣️ **Natural-language quick add** – type `Buy milk #groceries tomorrow` to set title, tags and due date in one go.
 - 📊 **Task sorting** – sort by due date, title, or completion status; overdue tasks are highlighted.
 - 📲 **Installable PWA** – installable on desktop & mobile (Chrome/Edge/Safari), runs in a standalone window, works offline via a service worker, with an auto-updating cache.
+- 💾 **Automated backups** – a Docker sidecar takes a consistent SQLite snapshot on deploy and once a day, gzips it to a host folder, prunes old ones by retention, and ships a one-command restore. See [Data persistence & backups](#data-persistence--backups).
 
 ## Project structure
 
@@ -35,6 +36,7 @@ mtodo/
 │   └── src/telegram/    # Telegram bot integration (Telegraf)
 ├── client/              # React + Vite SPA (TypeScript)
 ├── docker/              # Docker configs (compose, Dockerfiles, nginx, ngrok)
+│   └── backup/          # SQLite backup/restore + daily scheduler scripts
 ├── .env.example
 └── requirements.md
 ```
@@ -230,9 +232,57 @@ Defaults are generous and shouldn't affect normal use. Adjust per IP via:
 ### Data persistence & backups
 
 The SQLite database lives at `DATABASE_FILE` (default `/data/mtodo.sqlite` in
-Docker, on the named `mtodo-data` volume). Back it up by copying that file (or
-the volume). `npm run docker:down -v` **drops** the volume and all data, so omit
-`-v` for an ordinary stop.
+Docker, on the named `mtodo-data` volume). `npm run docker:down -v` **drops** the
+volume and all data, so omit `-v` for an ordinary stop.
+
+#### Automated daily backups (Docker)
+
+The Compose stack includes a `backup` sidecar (`docker/backup.Dockerfile`) that
+runs alongside the server. It:
+
+- takes a **consistent snapshot on startup** (so a backup exists right after
+  deploy), and then **once a day** at `BACKUP_TIME` (HH:MM, UTC, default `03:00`);
+- uses SQLite's online `.backup` API, so snapshots are safe to take while the
+  server is writing (the DB runs in WAL mode);
+- gzips each snapshot and **copies it to a host folder** — `./backups` by default
+  (override with `BACKUP_HOST_DIR`) — so backups survive even if the Docker
+  volume is removed;
+- verifies each snapshot with `PRAGMA integrity_check` and prunes backups older
+  than `BACKUP_RETENTION_DAYS` (default `7`).
+
+Backups are named `mtodo-YYYYMMDD-HHMMSS.sqlite.gz`. Relevant env vars
+(`BACKUP_TIME`, `BACKUP_RETENTION_DAYS`, `BACKUP_HOST_DIR`) are documented in
+`.env.example`.
+
+Take an on-demand backup of the running stack:
+
+```bash
+npm run db:backup
+# or: docker compose -p mtodo -f docker/docker-compose.yml exec backup sh /scripts/backup.sh
+```
+
+#### Restoring from a backup
+
+The `restore.sh` script decompresses a chosen backup, verifies its integrity,
+keeps a safety copy of the current database (`*.pre-restore.*`), and replaces the
+live file. **Stop the server first** so it isn't writing during the swap:
+
+```bash
+# List available backups
+npm run db:backups
+
+# Restore the most recent backup
+docker compose -p mtodo -f docker/docker-compose.yml stop server
+npm run db:restore                       # newest backup
+# or restore a specific one:
+# docker compose -p mtodo -f docker/docker-compose.yml run --rm backup \
+#   sh /scripts/restore.sh mtodo-20260101-030000.sqlite.gz
+docker compose -p mtodo -f docker/docker-compose.yml start server
+```
+
+The backup/restore scripts are plain POSIX shell (`docker/backup/`) and read
+`DATABASE_FILE` / `BACKUP_DIR` from the environment, so they also work outside
+Docker (they only require the `sqlite3` CLI).
 
 ## Progressive Web App (PWA)
 
@@ -276,6 +326,9 @@ See [`.env.example`](./.env.example):
 | `TELEGRAM_BOT_USERNAME` | Bot username without `@` (for deep links & login widget) |
 | `VITE_API_URL`    | API base URL the client calls                |
 | `NGROK_AUTHTOKEN` | ngrok auth token for the optional public tunnel (Docker) |
+| `BACKUP_TIME`     | Daily backup time `HH:MM` (UTC) for the backup sidecar (default `03:00`) |
+| `BACKUP_RETENTION_DAYS` | Days of backups to keep before pruning (default `7`) |
+| `BACKUP_HOST_DIR` | Host folder backups are copied to, relative to `docker/` (default `../backups`) |
 
 ## Security
 

@@ -44,7 +44,23 @@
     "tgCheck": "I've linked it",
     "tgConnectedAs": "Connected as",
     "tgUnlink": "Unlink",
-    "tgConfirmUnlink": "Disconnect your Telegram account from mTodo?"
+    "tgConfirmUnlink": "Disconnect your Telegram account from mTodo?",
+    "preferences": "Preferences",
+    "listsHint": "Export your lists and their tasks as a JSON file, or import them from one.",
+    "listsExport": "Export lists",
+    "listsImport": "Import lists",
+    "listsExported": "Exported {{count}} list(s)",
+    "listsImported": "Imported {{lists}} list(s) and {{tasks}} task(s)",
+    "listsExportFailed": "Couldn't export lists",
+    "listsImportFailed": "Couldn't import lists",
+    "listsImportConfirm": "Import {{count}} list(s)? This adds them to your existing lists.",
+    "listsError": {
+      "invalidJson": "the file isn't valid JSON",
+      "invalidShape": "unexpected file contents",
+      "missingListName": "a list is missing its name",
+      "missingTaskTitle": "a task is missing its title",
+      "empty": "the file contains no lists"
+    }
   },
   "auth": {
     "welcomeBack": "Welcome back",

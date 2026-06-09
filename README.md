@@ -62,8 +62,9 @@ cp .env.example .env      # adjust secrets / admin credentials
 
 All Docker configs live in [`docker/`](./docker). The compose file builds from
 the repository root, loads variables from the repo-root `.env`, and runs the
-API and client with restart policies and a persistent SQLite volume
-(`mtodo-data`, mounted at `/data` inside the server container).
+API and client with restart policies and a persistent SQLite database
+bind-mounted from a host folder (`DATA_HOST_DIR`, default `./data`, mounted at
+`/data` inside the server container).
 
 ```bash
 npm run docker:up
@@ -232,8 +233,11 @@ Defaults are generous and shouldn't affect normal use. Adjust per IP via:
 ### Data persistence & backups
 
 The SQLite database lives at `DATABASE_FILE` (default `/data/mtodo.sqlite` in
-Docker, on the named `mtodo-data` volume). `npm run docker:down -v` **drops** the
-volume and all data, so omit `-v` for an ordinary stop.
+Docker). `/data` is **bind-mounted from a real host folder** — `./data` at the
+repo root by default, override with `DATA_HOST_DIR`. Because it's an ordinary
+folder on the host (not a Docker named volume), the database survives image
+rebuilds, `docker compose down -v`, and `docker volume prune`. The only way to
+lose it is to delete the folder itself.
 
 #### Automated daily backups (Docker)
 

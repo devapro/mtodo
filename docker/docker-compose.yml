@@ -20,10 +20,14 @@ services:
     environment:
       PORT: 4000
       NODE_ENV: production
-      # SQLite lives on the named volume mounted at /data.
+      # SQLite lives in the bind-mounted host folder mounted at /data.
       DATABASE_FILE: /data/mtodo.sqlite
     volumes:
-      - mtodo-data:/data
+      # Bind mount: the database is stored in a real folder on the host
+      # (DATA_HOST_DIR, default ../data). Unlike a named volume, this folder is
+      # never removed by `docker compose down -v`, `docker volume prune`, or a
+      # project-name change — so data survives rebuilds and cleanups.
+      - ${DATA_HOST_DIR:-../data}:/data
     ports:
       - "4000:4000"
 
@@ -65,10 +69,11 @@ services:
       # How many days of backups to keep before pruning.
       BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
     volumes:
-      # Live database. The scheduler only reads it; mounted read-write so the
-      # same service can also run restore.sh (which replaces the file) via
+      # Live database (same host folder as the server). The scheduler only reads
+      # it; mounted read-write so the same service can also run restore.sh (which
+      # replaces the file) via
       # `docker compose run --rm backup sh /scripts/restore.sh`.
-      - mtodo-data:/data
+      - ${DATA_HOST_DIR:-../data}:/data
       # The "specific folder" backups are copied to, bind-mounted to the host so
       # snapshots survive even if the Docker volumes are removed.
       - ${BACKUP_HOST_DIR:-../backups}:/backups
@@ -92,6 +97,3 @@ services:
     command: ["http", "client:80"]
     ports:
       - "4040:4040"
-
-volumes:
-  mtodo-data:

@@ -7,6 +7,29 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
 
 const DEFAULT_JWT_SECRET = 'dev-secret-change-me';
+const DEFAULT_ADMIN_PASSWORD = 'admin12345';
+
+// Minimum entropy we require from a production JWT secret. 32 chars is a
+// reasonable floor for a random/base64 secret.
+const MIN_JWT_SECRET_LENGTH = 32;
+
+// Secrets that ship in the repo (.env / .env.example) or are otherwise common
+// placeholders. They pass the old "is it the literal default?" check but are
+// publicly known, so tokens signed with them are trivially forgeable.
+const KNOWN_WEAK_JWT_SECRETS = new Set([
+  DEFAULT_JWT_SECRET,
+  'super-secret-change-me',
+  'change-me',
+  'changeme',
+  'secret',
+  'jwt-secret',
+  'your-secret-here',
+]);
+
+// Synthetic email domain used for auto-provisioned Telegram-only accounts.
+// Reserved: normal signups to this domain are rejected so an attacker cannot
+// pre-register a victim's `tg<id>@telegram.local` address and hijack the link.
+export const TELEGRAM_SYNTHETIC_EMAIL_DOMAIN = 'telegram.local';
 
 // Comma-separated list of allowed origins for CORS. When empty, every origin is
 // reflected back, which keeps the app usable on a plain HTTP LAN server
@@ -56,4 +79,22 @@ export function isTelegramEnabled(): boolean {
 
 export function isUsingDefaultJwtSecret(): boolean {
   return config.jwtSecret === DEFAULT_JWT_SECRET;
+}
+
+/**
+ * A JWT secret is unsafe for production if it is a known placeholder/weak value
+ * or too short to provide meaningful entropy. The old check only caught the one
+ * literal default, so a still-guessable value like "super-secret-change-me"
+ * (shipped in .env) slipped through and allowed token forgery.
+ */
+export function isUsingWeakJwtSecret(): boolean {
+  const secret = config.jwtSecret;
+  if (KNOWN_WEAK_JWT_SECRETS.has(secret)) return true;
+  if (secret.length < MIN_JWT_SECRET_LENGTH) return true;
+  return false;
+}
+
+/** True when the admin account still uses the shipped default password. */
+export function isUsingDefaultAdminPassword(): boolean {
+  return config.admin.password === DEFAULT_ADMIN_PASSWORD;
 }

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { z, ZodError, ZodSchema } from 'zod';
+import { TELEGRAM_SYNTHETIC_EMAIL_DOMAIN } from './config';
 
 /**
  * Build an Express middleware that validates `req.body` against a Zod schema.
@@ -76,8 +77,16 @@ const repeatDaysSchema = z.array(z.coerce.number().int().min(0).max(31)).max(31)
 
 // ----- Auth -----
 
+// Reserved domain used internally for auto-provisioned Telegram accounts.
+// Disallow it at signup so an attacker can't pre-register a victim's
+// `tg<telegramId>@telegram.local` address and hijack the Telegram link.
+const nonReservedEmailSchema = emailSchema.refine(
+  (email) => !email.endsWith(`@${TELEGRAM_SYNTHETIC_EMAIL_DOMAIN}`),
+  'This email domain is reserved'
+);
+
 export const signupSchema = z.object({
-  email: emailSchema,
+  email: nonReservedEmailSchema,
   password: passwordSchema,
 });
 
@@ -148,7 +157,7 @@ export const updateTaskSchema = z.object({
 // ----- Admin -----
 
 export const createUserSchema = z.object({
-  email: emailSchema,
+  email: nonReservedEmailSchema,
   password: passwordSchema,
   role: z.enum(['user', 'admin']).optional().default('user'),
 });

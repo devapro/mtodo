@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { prepare } from '../db';
+import { TELEGRAM_SYNTHETIC_EMAIL_DOMAIN } from '../config';
 import { canEditList, getListAccess } from '../access';
 import { ListRow, TaskRow, TelegramLoginData, UserRow } from '../types';
 import { generateLinkCode } from './verify';
@@ -102,7 +103,7 @@ export function findOrCreateUserByTelegramLogin(data: TelegramLoginData): UserRo
     return findUserById(existing.id)!;
   }
 
-  const email = `tg${telegramId}@telegram.local`;
+  const email = `tg${telegramId}@${TELEGRAM_SYNTHETIC_EMAIL_DOMAIN}`;
 
   // A previously auto-provisioned account may still exist (e.g. after an
   // unlink). Reuse it instead of hitting the unique-email constraint.

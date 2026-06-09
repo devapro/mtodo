@@ -2,7 +2,7 @@ import express from 'express';
 import cors, { CorsOptions } from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { config, isUsingDefaultJwtSecret } from './config';
+import { config, isUsingWeakJwtSecret, isUsingDefaultAdminPassword } from './config';
 import { initDb } from './db';
 import authRoutes from './routes/auth';
 import listRoutes from './routes/lists';
@@ -13,12 +13,26 @@ import { startTelegramBot } from './telegram';
 
 initDb();
 
-// Refuse to boot in production with the throwaway dev JWT secret — tokens would
-// be trivially forgeable. Local/dev use keeps working with the default.
-if (config.isProduction && isUsingDefaultJwtSecret()) {
+// Refuse to boot in production with a weak/known JWT secret — tokens would be
+// trivially forgeable (including admin tokens). This catches the shipped
+// placeholders and any secret shorter than the minimum length. Local/dev use
+// keeps working with the default.
+if (config.isProduction && isUsingWeakJwtSecret()) {
   // eslint-disable-next-line no-console
   console.error(
-    '[security] JWT_SECRET is still the default value. Set a strong JWT_SECRET in production.'
+    '[security] JWT_SECRET is weak or a known placeholder. Set a strong, random ' +
+      'JWT_SECRET (32+ chars) in production. Generate one with: ' +
+      "node -e \"console.log(require('crypto').randomBytes(48).toString('base64url'))\""
+  );
+  process.exit(1);
+}
+
+// Refuse to boot in production with the default admin password — the seeded
+// admin@example.com / admin12345 account would otherwise be a public backdoor.
+if (config.isProduction && isUsingDefaultAdminPassword()) {
+  // eslint-disable-next-line no-console
+  console.error(
+    '[security] ADMIN_PASSWORD is still the default value. Set a strong ADMIN_PASSWORD in production.'
   );
   process.exit(1);
 }

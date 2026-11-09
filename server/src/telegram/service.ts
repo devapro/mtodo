@@ -5,6 +5,7 @@ import { TELEGRAM_SYNTHETIC_EMAIL_DOMAIN } from '../config';
 import { canEditList, getListAccess } from '../access';
 import { ListRow, TaskRow, TelegramLoginData, UserRow } from '../types';
 import { generateLinkCode } from './verify';
+import { publish, taskAudience } from '../events';
 
 const LINK_CODE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -190,9 +191,11 @@ export function addTaskToList(
     `INSERT INTO tasks (user_id, list_id, title, repeat_type, completed)
      VALUES (?, ?, ?, 'none', 0)`
   ).run(userId, listId, title);
-  return prepare('SELECT * FROM tasks WHERE id = ?').get(
+  const row = prepare('SELECT * FROM tasks WHERE id = ?').get(
     Number(info.lastInsertRowid)
   ) as TaskRow;
+  publish(taskAudience(row), { type: 'tasks' });
+  return row;
 }
 
 export function toggleTaskForUser(userId: number, taskId: number): TaskRow | null {
@@ -206,5 +209,7 @@ export function toggleTaskForUser(userId: number, taskId: number): TaskRow | nul
   prepare(
     "UPDATE tasks SET completed = ?, updated_at = datetime('now') WHERE id = ?"
   ).run(task.completed ? 0 : 1, taskId);
-  return prepare('SELECT * FROM tasks WHERE id = ?').get(taskId) as TaskRow;
+  const row = prepare('SELECT * FROM tasks WHERE id = ?').get(taskId) as TaskRow;
+  publish(taskAudience(row), { type: 'tasks' });
+  return row;
 }

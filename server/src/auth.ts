@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from './config';
 import { AuthPayload } from './types';
+import { Actor } from './services/context';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -38,4 +39,9 @@ export function adminRequired(req: Request, res: Response, next: NextFunction): 
     return;
   }
   next();
+}
+
+/** Service-layer actor for an authenticated request. */
+export function actorOf(req: Request): Actor {
+  return { userId: req.user!.id, source: req.get('X-Client-Id') || undefined };
 }

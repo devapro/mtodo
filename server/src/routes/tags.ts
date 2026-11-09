@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prepare as db_prepare } from '../db';
 const db = { prepare: db_prepare };
 import { authRequired } from '../auth';
+import { publish } from '../events';
 import { TagRow } from '../types';
 import { validateBody, validateParams, idParamSchema, createTagSchema } from '../validate';
 
@@ -26,6 +27,7 @@ router.post('/', validateBody(createTagSchema), (req, res) => {
   const info = db
     .prepare('INSERT INTO tags (user_id, name) VALUES (?, ?)')
     .run(req.user!.id, name);
+  publish([req.user!.id], { type: 'tags', source: req.get('X-Client-Id') });
   res.status(201).json(
     db.prepare('SELECT * FROM tags WHERE id = ?').get(Number(info.lastInsertRowid))
   );
@@ -37,6 +39,8 @@ router.delete('/:id', validateParams(idParamSchema), (req, res) => {
     .prepare('DELETE FROM tags WHERE id = ? AND user_id = ?')
     .run(id, req.user!.id);
   if (Number(info.changes) === 0) return res.status(404).json({ error: 'Tag not found' });
+  publish([req.user!.id], { type: 'tags', source: req.get('X-Client-Id') });
+  publish([req.user!.id], { type: 'tasks', source: req.get('X-Client-Id') });
   res.status(204).end();
 });
 

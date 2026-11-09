@@ -9,6 +9,9 @@ import listRoutes from './routes/lists';
 import tagRoutes from './routes/tags';
 import taskRoutes from './routes/tasks';
 import adminRoutes from './routes/admin';
+import eventRoutes from './routes/events';
+import mcpRoutes from './routes/mcp';
+import { ServiceError } from './errors';
 import { startTelegramBot } from './telegram';
 
 initDb();
@@ -122,9 +125,16 @@ app.use('/api/lists', listRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/mcp', mcpRoutes);
 
-// Generic error handler
+// Error handler. Service-layer errors carry their own HTTP status; anything
+// else is an unexpected 500.
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  if (err instanceof ServiceError) {
+    res.status(err.status).json({ error: err.message });
+    return;
+  }
   // eslint-disable-next-line no-console
   console.error('[error]', err);
   res.status(500).json({ error: 'Internal server error' });

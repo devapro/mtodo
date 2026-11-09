@@ -11,6 +11,12 @@ export interface UserRow {
   telegram_first_name: string | null;
   telegram_link_code: string | null;
   telegram_link_expires: string | null;
+  settings: string | null; // JSON, see services/settings.ts
+}
+
+export interface UserSettings {
+  /** Show completed tasks in task views. */
+  show_completed: boolean;
 }
 
 export interface PublicUser {
@@ -20,6 +26,7 @@ export interface PublicUser {
   created_at: string;
   telegram_id: string | null;
   telegram_username: string | null;
+  settings: UserSettings;
 }
 
 export interface TelegramLoginData {

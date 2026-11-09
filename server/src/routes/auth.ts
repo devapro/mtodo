@@ -6,7 +6,18 @@ import { signToken, authRequired } from '../auth';
 import { config, isTelegramEnabled } from '../config';
 import { UserRow, PublicUser, TelegramLoginData } from '../types';
 import { verifyTelegramLogin } from '../telegram/verify';
-import { validateBody, signupSchema, signinSchema } from '../validate';
+import {
+  validateBody,
+  validateParams,
+  signupSchema,
+  signinSchema,
+  idParamSchema,
+  updateSettingsSchema,
+  createApiTokenSchema,
+} from '../validate';
+import { actorOf } from '../auth';
+import { parseSettings, getSettings, updateSettings } from '../services/settings';
+import { createApiToken, listApiTokens, revokeApiToken } from '../services/apiTokens';
 import {
   createLinkCode,
   findOrCreateUserByTelegramLogin,
@@ -24,6 +35,7 @@ function toPublic(u: UserRow): PublicUser {
     created_at: u.created_at,
     telegram_id: u.telegram_id ?? null,
     telegram_username: u.telegram_username ?? null,
+    settings: parseSettings(u.settings),
   };
 }
 
@@ -69,6 +81,32 @@ router.get('/me', authRequired, (req, res) => {
     | undefined;
   if (!user) return res.status(404).json({ error: 'User not found' });
   return res.json({ user: toPublic(user) });
+});
+
+// ----- Settings (per-user UI preferences) -----
+
+router.get('/settings', authRequired, (req, res) => {
+  res.json({ settings: getSettings(req.user!.id) });
+});
+
+router.put('/settings', authRequired, validateBody(updateSettingsSchema), (req, res) => {
+  res.json({ settings: updateSettings(actorOf(req), req.body) });
+});
+
+// ----- Personal access tokens (for the MCP endpoint) -----
+
+router.get('/tokens', authRequired, (req, res) => {
+  res.json(listApiTokens(req.user!.id));
+});
+
+// The raw token is returned only here, once.
+router.post('/tokens', authRequired, validateBody(createApiTokenSchema), (req, res) => {
+  res.status(201).json(createApiToken(req.user!.id, req.body.name));
+});
+
+router.delete('/tokens/:id', authRequired, validateParams(idParamSchema), (req, res) => {
+  revokeApiToken(req.user!.id, Number(req.params.id));
+  res.status(204).end();
 });
 
 // ----- Telegram integration -----

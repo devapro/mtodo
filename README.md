@@ -25,6 +25,9 @@ A simple, modern TODO Proof of Concept built with a TypeScript stack.
 - ⌨️ **Keyboard shortcuts** – `N` new task, `/` focus search, `T` today view, `A` all tasks.
 - 🗣️ **Natural-language quick add** – type `Buy milk #groceries tomorrow` to set title, tags and due date in one go.
 - 📊 **Task sorting** – sort by due date, title, or completion status; overdue tasks are highlighted.
+- 👁️ **Saved "show completed" preference** – the show/hide done items switch is stored on your account and follows you across devices.
+- ⚡ **Realtime updates** – changes made in another tab or device, by a list collaborator, the Telegram bot or an AI agent appear instantly without reloading (Server-Sent Events).
+- 🤖 **AI agents (MCP)** – a built-in [Model Context Protocol](https://modelcontextprotocol.io) server lets agents like Claude list, add, update and delete your lists and tasks. Create an access token in **Settings → AI agents (MCP)**.
 - 📲 **Installable PWA** – installable on desktop & mobile (Chrome/Edge/Safari), runs in a standalone window, works offline via a service worker, with an auto-updating cache.
 - 💾 **Automated backups** – a Docker sidecar takes a consistent SQLite snapshot on deploy and once a day, gzips it to a host folder, prunes old ones by retention, and ships a one-command restore. See [Data persistence & backups](#data-persistence--backups).
 
@@ -33,12 +36,14 @@ A simple, modern TODO Proof of Concept built with a TypeScript stack.
 ```
 mtodo/
 ├── server/              # Express + SQLite API (TypeScript)
-│   └── src/telegram/    # Telegram bot integration (Telegraf)
+│   ├── src/telegram/    # Telegram bot integration (Telegraf)
+│   ├── src/services/    # Lists/tasks/settings/token logic shared by REST + MCP
+│   └── src/mcp/         # MCP server for AI agents
 ├── client/              # React + Vite SPA (TypeScript)
 ├── docker/              # Docker configs (compose, Dockerfiles, nginx, ngrok)
 │   └── backup/          # SQLite backup/restore + daily scheduler scripts
-├── .env.example
-└── requirements.md
+├── docs/                # Specification (specification.md) + GitHub Pages landing page
+└── .env.example
 ```
 
 ## Installation
@@ -390,6 +395,57 @@ panel.
 Widget. Authenticating creates/links an account and returns a normal JWT, so it
 behaves like any other session.
 
+## AI agents (MCP)
+
+mTodo exposes a [Model Context Protocol](https://modelcontextprotocol.io) server
+so AI agents can manage your lists and tasks on your behalf.
+
+1. Open **Settings → AI agents (MCP)**, name a token and click **Create token**.
+   Copy it — it's shown only once.
+2. Point your agent at the MCP endpoint (Streamable HTTP) with the token as a
+   Bearer header:
+   - Docker: `http://localhost:5173/api/mcp` (or your public `https://…/api/mcp`)
+   - Development: `http://localhost:4000/api/mcp`
+
+```jsonc
+// Generic MCP client config (e.g. Claude Desktop / Cursor)
+{
+  "mcpServers": {
+    "mtodo": {
+      "type": "http",
+      "url": "http://localhost:5173/api/mcp",
+      "headers": { "Authorization": "Bearer mtd_..." }
+    }
+  }
+}
+```
+
+```bash
+# Claude Code
+claude mcp add --transport http mtodo http://localhost:5173/api/mcp \
+  --header "Authorization: Bearer mtd_..."
+```
+
+Tools: `list_lists`, `create_list`, `update_list`, `delete_list`, `list_tasks`,
+`get_task`, `create_task`, `update_task`, `set_task_completed`, `delete_task`,
+`list_tags`. Agents act with your permissions (shared read-only lists stay
+read-only), and their changes show up live in the web app. Tokens only work on
+the MCP endpoint and can be revoked at any time from Settings.
+
+## Realtime updates
+
+The web app keeps a Server-Sent Events connection to `GET /api/events`. Whenever
+data changes — from any tab, device, list collaborator, the Telegram bot or an
+AI agent — the server notifies every affected user and their open tabs refetch
+the changed data. The navbar shows **Live** / **Offline**; the client reconnects
+automatically and resyncs after a disconnect. If you run your own reverse proxy,
+disable response buffering for `/api/events` (see `docker/nginx.conf`).
+
+## Specification
+
+The full product and API specification lives in
+[`docs/specification.md`](./docs/specification.md).
+
 ## API overview
 
 | Method | Endpoint                | Description                |
@@ -397,6 +453,11 @@ behaves like any other session.
 | POST   | `/api/auth/signup`      | Create account             |
 | POST   | `/api/auth/signin`      | Log in                     |
 | GET    | `/api/auth/me`          | Current user               |
+| GET/PUT | `/api/auth/settings`   | Read / update saved preferences (`show_completed`) |
+| GET/POST | `/api/auth/tokens`    | List / create MCP access tokens |
+| DELETE | `/api/auth/tokens/:id`  | Revoke an access token     |
+| GET    | `/api/events`           | Realtime change stream (SSE) |
+| POST   | `/api/mcp`              | MCP endpoint (access token) |
 | GET    | `/api/auth/telegram/config`    | Whether Telegram is enabled + bot username |
 | POST   | `/api/auth/telegram`           | Log in with Telegram Login Widget |
 | POST   | `/api/auth/telegram/link-code` | Generate a one-time bot link code |

@@ -2,9 +2,11 @@ import { Navbar, Container, Nav } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import { useRealtime } from '../context/RealtimeContext';
 
 export default function NavBar() {
   const { user } = useAuth();
+  const { connected } = useRealtime();
   const { t } = useTranslation();
 
   return (
@@ -25,7 +27,18 @@ export default function NavBar() {
               </Nav.Link>
             )}
           </Nav>
-          <div className="d-flex align-items-center">
+          <div className="d-flex align-items-center gap-3">
+            <span
+              className="small text-secondary d-flex align-items-center gap-1"
+              title={connected ? t('nav.liveOn') : t('nav.liveOff')}
+            >
+              <span
+                aria-hidden
+                className={`rounded-circle d-inline-block ${connected ? 'bg-success' : 'bg-secondary'}`}
+                style={{ width: 8, height: 8 }}
+              />
+              {connected ? t('nav.live') : t('nav.offline')}
+            </span>
             <Link
               to="/settings"
               className="btn btn-outline-secondary btn-sm d-flex align-items-center"

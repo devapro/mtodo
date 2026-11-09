@@ -30,7 +30,12 @@ export default defineConfig({
         // Cache GET API responses so previously loaded data is available offline.
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+            // Never route the realtime stream (/api/events) or the MCP endpoint
+            // through the cache: a NetworkFirst timeout would break the stream.
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith('/api/') &&
+              !url.pathname.startsWith('/api/events') &&
+              !url.pathname.startsWith('/api/mcp'),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'mtodo-api',

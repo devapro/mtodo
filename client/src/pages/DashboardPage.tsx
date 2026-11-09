@@ -11,6 +11,7 @@ import TaskModal from '../components/TaskModal';
 import ShareModal from '../components/ShareModal';
 import ListModal from '../components/ListModal';
 import { useAuth } from '../context/AuthContext';
+import { useRealtimeEvents } from '../context/RealtimeContext';
 import { useConfirm } from '../context/ConfirmContext';
 import { useToast } from '../context/ToastContext';
 import { parseQuickAdd, todayStr } from '../utils';
@@ -24,7 +25,7 @@ type View = { kind: 'today' } | { kind: 'all' } | { kind: 'list'; id: number };
 type SortBy = 'manual' | 'due' | 'title' | 'completed';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const { t } = useTranslation();
   const confirm = useConfirm();
   const toast = useToast();
@@ -43,7 +44,6 @@ export default function DashboardPage() {
   const [prefillTitle, setPrefillTitle] = useState('');
   const [newListName, setNewListName] = useState('');
   const [search, setSearch] = useState('');
-  const [showCompleted, setShowCompleted] = useState(true);
   const [quickTitle, setQuickTitle] = useState('');
   const [quickBusy, setQuickBusy] = useState(false);
   const [activeTag, setActiveTag] = useState<string | null>(null);
@@ -57,6 +57,21 @@ export default function DashboardPage() {
   const [listOpenCounts, setListOpenCounts] = useState<Record<number, number>>({});
 
   const activeListId = view.kind === 'list' ? view.id : null;
+  // Persisted per user on the server, so it follows the user across devices.
+  const showCompleted = user?.settings?.show_completed ?? true;
+  const setShowCompleted = async (value: boolean) => {
+    if (!user) return;
+    const prev = user.settings;
+    setUser({ ...user, settings: { ...prev, show_completed: value } });
+    try {
+      const res = await api.updateSettings({ show_completed: value });
+      setUser({ ...user, settings: res.settings });
+    } catch (e) {
+      setUser({ ...user, settings: prev });
+      toast.error((e as Error).message);
+    }
+  };
+
   const currentList = view.kind === 'list' ? lists.find((l) => l.id === view.id) : undefined;
   const canEditCurrent = view.kind !== 'list' || !!currentList?.can_edit;
 
@@ -109,6 +124,34 @@ export default function DashboardPage() {
   useEffect(() => {
     loadTasks();
   }, [loadTasks]);
+
+  // Realtime: refetch whatever another tab, device, the Telegram bot or an AI
+  // agent (MCP) changed. Bursts of events are coalesced into one refetch.
+  const pending = useRef<Set<string>>(new Set());
+  const flushTimer = useRef<ReturnType<typeof setTimeout>>();
+  useRealtimeEvents((event) => {
+    if (event.type === 'settings') return; // handled by AuthContext
+    pending.current.add(event.type);
+    clearTimeout(flushTimer.current);
+    flushTimer.current = setTimeout(() => {
+      const kinds = pending.current;
+      pending.current = new Set();
+      const jobs: Promise<unknown>[] = [];
+      if (kinds.has('tasks')) jobs.push(loadTasks());
+      if (kinds.has('lists') || kinds.has('tags')) jobs.push(loadMeta().catch(() => undefined));
+      if (kinds.has('tasks') || kinds.has('lists')) jobs.push(refreshCounts());
+      void Promise.all(jobs);
+    }, 150);
+  });
+  useEffect(() => () => clearTimeout(flushTimer.current), []);
+
+  // If the open list disappears (deleted elsewhere, or access revoked), fall
+  // back to the "all tasks" view instead of showing a dangling list.
+  useEffect(() => {
+    if (!loading && view.kind === 'list' && !lists.some((l) => l.id === view.id)) {
+      setView({ kind: 'all' });
+    }
+  }, [lists, view, loading]);
 
   const markMutating = (id: number, on: boolean) => {
     setMutatingIds((prev) => {

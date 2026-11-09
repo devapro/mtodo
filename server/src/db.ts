@@ -146,6 +146,26 @@ function runMigrations(): void {
   db.exec(
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id) WHERE telegram_id IS NOT NULL'
   );
+
+  // Per-user UI preferences (JSON object, see services/settings.ts).
+  if (!columnExists('users', 'settings')) {
+    db.exec('ALTER TABLE users ADD COLUMN settings TEXT');
+  }
+
+  // Personal access tokens for the MCP endpoint. Only a SHA-256 hash is stored.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS api_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      token_hash TEXT UNIQUE NOT NULL,
+      token_prefix TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      last_used_at TEXT,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_api_tokens_user ON api_tokens(user_id);
+  `);
 }
 
 function seedAdmin(): void {

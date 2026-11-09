@@ -4,6 +4,7 @@ import { prepare as db_prepare } from '../db';
 const db = { prepare: db_prepare };
 import { authRequired, adminRequired } from '../auth';
 import { PublicUser, Role } from '../types';
+import { publish } from '../events';
 import {
   validateBody,
   validateParams,
@@ -82,8 +83,21 @@ router.delete('/users/:id', validateParams(idParamSchema), (req, res) => {
   if (id === req.user!.id) {
     return res.status(400).json({ error: 'You cannot delete your own account' });
   }
+  // Members of lists owned by this user lose those lists (cascade) — tell them.
+  const affected = db
+    .prepare(
+      `SELECT DISTINCT s.user_id FROM list_shares s JOIN lists l ON l.id = s.list_id
+       WHERE l.user_id = ?
+       UNION
+       SELECT l.user_id FROM list_shares s JOIN lists l ON l.id = s.list_id
+       WHERE s.user_id = ?`
+    )
+    .all(id, id) as { user_id: number }[];
   const info = db.prepare('DELETE FROM users WHERE id = ?').run(id);
   if (Number(info.changes) === 0) return res.status(404).json({ error: 'User not found' });
+  const ids = affected.map((r) => r.user_id);
+  publish(ids, { type: 'lists' });
+  publish(ids, { type: 'tasks' });
   res.status(204).end();
 });
 

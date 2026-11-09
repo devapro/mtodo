@@ -165,3 +165,17 @@ export const createUserSchema = z.object({
 export const resetPasswordSchema = z.object({
   password: passwordSchema,
 });
+
+// ----- Settings -----
+
+export const updateSettingsSchema = z
+  .object({
+    show_completed: z.boolean().optional(),
+  })
+  .strict();
+
+// ----- API tokens -----
+
+export const createApiTokenSchema = z.object({
+  name: z.string().trim().min(1, 'Token name is required').max(80, 'Token name is too long'),
+});

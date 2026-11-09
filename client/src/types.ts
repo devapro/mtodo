@@ -7,9 +7,29 @@ export interface User {
   created_at: string;
   telegram_id: string | null;
   telegram_username: string | null;
+  settings: UserSettings;
 }
 
-export interface AdminUser extends User {
+/** Per-user preferences stored on the server (synced across devices). */
+export interface UserSettings {
+  show_completed: boolean;
+}
+
+export interface ApiToken {
+  id: number;
+  name: string;
+  prefix: string;
+  created_at: string;
+  last_used_at: string | null;
+}
+
+/** Realtime change notification pushed by the server over /api/events. */
+export interface ChangeEvent {
+  type: 'tasks' | 'lists' | 'tags' | 'settings';
+  source?: string;
+}
+
+export interface AdminUser extends Omit<User, 'settings'> {
   task_count: number;
 }
 

@@ -6,7 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useConfirm } from '../context/ConfirmContext';
 import { useToast } from '../context/ToastContext';
-import { api } from '../api';
+import { api, mcpEndpointUrl } from '../api';
+import { ApiToken } from '../types';
 import { SUPPORTED_LANGUAGES } from '../i18n';
 import {
   ListsParseError,
@@ -28,6 +29,90 @@ export default function SettingsPage() {
   const [importing, setImporting] = useState(false);
 
   const currentLang = (i18n.resolvedLanguage || i18n.language || 'en').slice(0, 2);
+
+  // Saved (server-side) preference: show completed tasks.
+  const showCompleted = user?.settings?.show_completed ?? true;
+  const toggleShowCompleted = async (value: boolean) => {
+    if (!user) return;
+    const prev = user.settings;
+    setUser({ ...user, settings: { ...prev, show_completed: value } });
+    try {
+      const res = await api.updateSettings({ show_completed: value });
+      setUser({ ...user, settings: res.settings });
+    } catch (err) {
+      setUser({ ...user, settings: prev });
+      toast.error((err as Error).message);
+    }
+  };
+
+  // AI agents (MCP) access tokens
+  const mcpUrl = mcpEndpointUrl();
+  const [tokens, setTokens] = useState<ApiToken[]>([]);
+  const [tokenName, setTokenName] = useState('');
+  const [newToken, setNewToken] = useState<string | null>(null);
+  const [tokenBusy, setTokenBusy] = useState(false);
+
+  useEffect(() => {
+    api
+      .getApiTokens()
+      .then(setTokens)
+      .catch(() => setTokens([]));
+  }, []);
+
+  const createToken = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = tokenName.trim();
+    if (!name) return;
+    setTokenBusy(true);
+    try {
+      const res = await api.createApiToken(name);
+      setTokens((prev) => [res.info, ...prev]);
+      setNewToken(res.token);
+      setTokenName('');
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setTokenBusy(false);
+    }
+  };
+
+  const revokeToken = async (token: ApiToken) => {
+    const ok = await confirm({
+      message: t('settings.mcpConfirmRevoke', { name: token.name }),
+      confirmLabel: t('settings.mcpRevoke'),
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await api.revokeApiToken(token.id);
+      setTokens((prev) => prev.filter((x) => x.id !== token.id));
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(t('settings.copied'));
+    } catch {
+      // Clipboard API unavailable (e.g. insecure context) — the text is selectable.
+    }
+  };
+
+  const mcpConfigSnippet = JSON.stringify(
+    {
+      mcpServers: {
+        mtodo: {
+          type: 'http',
+          url: mcpUrl,
+          headers: { Authorization: `Bearer ${newToken ?? '<your-token>'}` },
+        },
+      },
+    },
+    null,
+    2
+  );
 
   // Telegram linking state
   const [tgEnabled, setTgEnabled] = useState(false);
@@ -207,6 +292,15 @@ export default function SettingsPage() {
       <Card className="mb-3">
         <Card.Header className="fw-semibold">{t('settings.preferences')}</Card.Header>
         <Card.Body>
+          <Form.Check
+            type="switch"
+            id="settings-show-completed"
+            className="mb-1"
+            label={t('dashboard.showCompleted')}
+            checked={showCompleted}
+            onChange={(e) => toggleShowCompleted(e.target.checked)}
+          />
+          <p className="text-secondary small mb-3">{t('settings.showCompletedHint')}</p>
           <p className="text-secondary small mb-3">{t('settings.listsHint')}</p>
           <div className="d-flex gap-2 flex-wrap">
             <Button
@@ -302,6 +396,92 @@ export default function SettingsPage() {
           </Card.Body>
         </Card>
       )}
+
+      <Card className="mb-3">
+        <Card.Header className="fw-semibold">
+          <span aria-hidden className="me-1">🤖</span>
+          {t('settings.mcp')}
+        </Card.Header>
+        <Card.Body>
+          <p className="text-secondary small mb-2">{t('settings.mcpHint')}</p>
+          <Form.Label className="small mb-1">{t('settings.mcpEndpoint')}</Form.Label>
+          <div className="d-flex gap-2 mb-3">
+            <Form.Control size="sm" readOnly value={mcpUrl} onFocus={(e) => e.target.select()} />
+            <Button size="sm" variant="outline-secondary" onClick={() => copy(mcpUrl)}>
+              {t('settings.copy')}
+            </Button>
+          </div>
+
+          {newToken && (
+            <Alert variant="success" onClose={() => setNewToken(null)} dismissible>
+              <div className="small mb-2">{t('settings.mcpTokenCreated')}</div>
+              <div className="d-flex gap-2 mb-2">
+                <Form.Control
+                  size="sm"
+                  readOnly
+                  value={newToken}
+                  className="font-monospace"
+                  onFocus={(e) => e.target.select()}
+                />
+                <Button size="sm" variant="success" onClick={() => copy(newToken)}>
+                  {t('settings.copy')}
+                </Button>
+              </div>
+              <div className="small mb-1">{t('settings.mcpConfigHint')}</div>
+              <pre className="small bg-body-tertiary border rounded p-2 mb-0">
+                <code>{mcpConfigSnippet}</code>
+              </pre>
+            </Alert>
+          )}
+
+          <Form onSubmit={createToken} className="d-flex gap-2 mb-3">
+            <Form.Control
+              size="sm"
+              placeholder={t('settings.mcpTokenName')}
+              value={tokenName}
+              maxLength={80}
+              onChange={(e) => setTokenName(e.target.value)}
+              aria-label={t('settings.mcpTokenName')}
+            />
+            <Button
+              size="sm"
+              type="submit"
+              variant="primary"
+              disabled={tokenBusy || !tokenName.trim()}
+              className="text-nowrap"
+            >
+              {tokenBusy ? <Spinner size="sm" animation="border" /> : t('settings.mcpCreate')}
+            </Button>
+          </Form>
+
+          {tokens.length === 0 ? (
+            <p className="text-secondary small mb-0">{t('settings.mcpNoTokens')}</p>
+          ) : (
+            <ul className="list-unstyled mb-0">
+              {tokens.map((tk) => (
+                <li
+                  key={tk.id}
+                  className="d-flex justify-content-between align-items-center gap-2 py-1 border-top"
+                >
+                  <span className="small">
+                    <strong>{tk.name}</strong>{' '}
+                    <code className="text-secondary">{tk.prefix}…</code>
+                    <br />
+                    <span className="text-secondary">
+                      {tk.last_used_at
+                        ? t('settings.mcpLastUsed', { date: tk.last_used_at.slice(0, 16) })
+                        : t('settings.mcpNeverUsed')}
+                    </span>
+                  </span>
+                  <Button size="sm" variant="outline-danger" onClick={() => revokeToken(tk)}>
+                    {t('settings.mcpRevoke')}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card.Body>
+      </Card>
 
       <Card>
         <Card.Header className="fw-semibold">{t('settings.account')}</Card.Header>

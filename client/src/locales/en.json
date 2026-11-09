@@ -27,7 +27,11 @@
     "light": "☀️ Light",
     "dark": "🌙 Dark",
     "adminBadge": "admin",
-    "settings": "Settings"
+    "settings": "Settings",
+    "live": "Live",
+    "offline": "Offline",
+    "liveOn": "Live updates are on: changes made elsewhere appear automatically",
+    "liveOff": "Live updates are disconnected; reconnecting…"
   },
   "settings": {
     "title": "Settings",
@@ -60,7 +64,22 @@
       "missingListName": "a list is missing its name",
       "missingTaskTitle": "a task is missing its title",
       "empty": "the file contains no lists"
-    }
+    },
+    "showCompletedHint": "Saved to your account and applied on all your devices.",
+    "copy": "Copy",
+    "copied": "Copied to clipboard",
+    "mcp": "AI agents (MCP)",
+    "mcpHint": "Let AI agents such as Claude manage your lists and tasks through the Model Context Protocol. Create an access token and add this server to your agent.",
+    "mcpEndpoint": "MCP server URL",
+    "mcpTokenName": "Token name, e.g. \"Claude Desktop\"",
+    "mcpCreate": "Create token",
+    "mcpTokenCreated": "Copy your new token now — it won't be shown again.",
+    "mcpConfigHint": "Example MCP client configuration:",
+    "mcpNoTokens": "No access tokens yet.",
+    "mcpRevoke": "Revoke",
+    "mcpConfirmRevoke": "Revoke the token \"{{name}}\"? Agents using it will lose access immediately.",
+    "mcpLastUsed": "Last used {{date}} UTC",
+    "mcpNeverUsed": "Never used"
   },
   "auth": {
     "welcomeBack": "Welcome back",
